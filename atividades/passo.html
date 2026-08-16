@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passo — o limiar do teu corpo · microbit.monco.io</title>
+<meta name="description" content="Atividade de 1h10: um acelerómetro conta passos e saltos, e cada equipa descobre que o mesmo limiar não serve para dois corpos diferentes.">
+<meta property="og:title" content="Passo — o limiar do teu corpo">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Um acelerómetro, um limiar, e uma corrida para o pôr à prova.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Passo 004 — acentos e assinatura ===== */
+body{--accent:#2AAE4B;--accent-2:#C41B6E}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(56px,12vw,150px);font-weight:800;line-height:.86;margin-bottom:22px}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- simulador de força (assinatura) --- */
+.step-shell{border:2px solid var(--ink);margin-top:44px;background:var(--paper-2)}
+.step-meter{height:150px;margin:24px 20px 0;position:relative;border:2px solid var(--ink);background:var(--paper);overflow:hidden}
+.step-fill{position:absolute;bottom:0;left:0;width:100%;background:var(--accent);transition:height .05s linear}
+.step-line{position:absolute;left:0;width:100%;height:2px;background:var(--ink);border-top:2px dashed var(--accent-2)}
+.step-ctl{padding:26px 20px 18px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.step-ctl div label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+input[type=number]{
+  font-family:var(--mono);font-size:16px;width:100px;padding:7px 9px;
+  border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+}
+.step-status{border-top:2px solid var(--ink);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:13px}
+.step-status b{font-size:22px;font-weight:500}
+button.reset{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+  background:transparent;color:var(--ink);border:2px solid var(--ink);padding:8px 14px;cursor:pointer;
+}
+button.reset:hover{background:var(--ink);color:var(--paper)}
+
+@media (max-width:700px){
+  .step-ctl{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>004 · Passo</span>
+  <span>1h10 · 1 micro:bit V2 por pessoa</span>
+</div></div>
+
+<!-- ============ 1 · ABERTURA ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 004 · Acelerómetro, limiares, nível iniciação</div>
+  <h1>Passo</h1>
+  <p class="lede">O acelerómetro mede a força de cada movimento. Decidir a partir de que força isso conta como "passo" é uma escolha — e a mesma escolha não serve para uma criança de seis anos e para um adulto a correr.</p>
+
+  <div class="step-shell">
+    <div class="step-meter">
+      <div class="step-line" id="stepLine" style="top:40%"></div>
+      <div class="step-fill" id="stepFill" style="height:20%"></div>
+    </div>
+    <div class="step-ctl">
+      <div>
+        <label for="forca">Força do movimento</label>
+        <input type="range" id="forca" min="0" max="2000" value="300">
+      </div>
+      <div>
+        <label for="limiarP">Limiar — conta como passo</label>
+        <input type="number" id="limiarP" min="0" max="2000" value="1200" step="50">
+      </div>
+    </div>
+    <div class="step-status">
+      <span>Passos contados <b class="mono" id="passosOut">0</b></span>
+      <button class="reset" id="resetBtn" type="button">Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="hero-meta">
+    <span>Acelerómetro · força 0–2000</span>
+    <span>1 variável editável</span>
+    <span>Sem rádio</span>
+    <span>Um aparelho por pessoa</span>
+  </div>
+</div></section>
+
+<!-- ============ 2 · O MECANISMO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Medir a força,<br>não o movimento</h2>
+  <p>O micro:bit não sabe o que é um passo. Só sabe medir a força total a que está sujeito, muitas vezes por segundo, e comparar esse número com um limiar.</p>
+  <div class="cols">
+    <div class="card"><span class="n">A cada instante</span><h3>Mede a força</h3><p><span class="tag">input.acceleration(Strength)</span> devolve um número que sobe com qualquer abanão, passo ou salto — e também com tremores da mão.</p></div>
+    <div class="card"><span class="n">Comparação</span><h3>Passou o limiar?</h3><p>Se a força medida for maior ou igual ao limiar, conta-se um passo e soma-se ao total.</p></div>
+    <div class="card"><span class="n">Botão B</span><h3>Reinicia a contagem</h3><p>Zera o contador para começar uma nova ronda sem desligar o aparelho.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 · CONCEITO CENTRAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Conceito</div>
+  <h2>Falsos positivos,<br>falsos negativos</h2>
+  <p>Um limiar baixo conta abanões de braço como passos — falso positivo. Um limiar alto ignora passos suaves de quem anda em bicos de pés — falso negativo. Não existe um limiar perfeito, só um que serve melhor para uma situação.</p>
+  <table>
+    <thead><tr><th>Limiar</th><th>Efeito</th></tr></thead>
+    <tbody>
+      <tr><td class="t">600</td><td class="dim">Conta quase tudo, incluindo movimentos que não são passos</td></tr>
+      <tr><td class="t">1200</td><td class="dim">Equilíbrio razoável para andar normalmente</td></tr>
+      <tr><td class="t">1800</td><td class="dim">Só conta passos fortes ou saltos; passos suaves desaparecem</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 4 · SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 70 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>10 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Um passo e um abanão de braço — para o micro:bit, qual é a diferença?» Ainda sem resposta.</p></div></div>
+    <div class="tl-row"><div class="t">00:10<small>20 min</small></div><div><h3>Guião do dinamizador · o código já escrito</h3><p>Carregar o programa em todos os aparelhos. Seguir os passos do guião mais abaixo: o que já vem feito, e o único valor que se muda — o limiar.</p></div></div>
+    <div class="tl-row pause"><div class="t">00:30<small>10 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">00:40<small>20 min</small></div><div><h3>Contagem a sério</h3><p>Cada participante conta 20 passos reais em voz baixa enquanto o micro:bit conta os dele. Comparar os dois números. Ajustar o limiar e repetir.</p></div></div>
+    <div class="tl-row"><div class="t">01:00<small>5 min</small></div><div><h3>Corrida de saltos</h3><p>Dez saltos no lugar; ver quantos o aparelho regista com limiares diferentes.</p></div></div>
+    <div class="tl-row"><div class="t">01:05<small>5 min</small></div><div><h3>Fecho</h3><p>Havia um limiar que funcionava para toda a gente, ou cada corpo pedia um valor diferente?</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ 5 · PREPARAÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Um aparelho,<br>bem preso</h2>
+  <p>Não há configuração por aparelho — todos correm o mesmo código. A única preparação é física: o micro:bit precisa de andar preso ao corpo, não solto na mão, para as leituras serem consistentes.</p>
+  <table>
+    <thead><tr><th>Onde prender</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Bolso</td><td class="dim">Simples, mas o tecido amortece a força — usar limiares mais baixos</td></tr>
+      <tr><td class="t">Braçadeira ou fita</td><td class="dim">Leituras mais nítidas, precisa de material extra</td></tr>
+      <tr><td class="t">Na mão, bem segura</td><td class="dim">Só para a fase de teste, não para a corrida</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 6 · CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. Cada equipa cola isto inteiro e edita só uma coisa, a seguir, passo a passo.</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">passo.ts · acelerómetro + limiar</span>
+    <button class="copy" id="copyBtn">Copiar código</button>
+  </div>
+  <pre id="code"><span class="c">// ===== PASSO — microbit.monco.io =====</span>
+<span class="c">// conta um passo sempre que a força passa o limiar</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> LIMIAR = 1200
+
+<span class="k">let</span> passos = 0
+
+<span class="k">function</span> verificarPasso() {
+    <span class="k">let</span> forca = input.acceleration(Dimension.Strength)
+    <span class="k">if</span> (forca &gt;= LIMIAR) {
+        passos = passos + 1
+        basic.showNumber(passos)
+        music.playTone(880, music.beat(BeatFraction.Sixteenth))
+    }
+}
+
+basic.forever(<span class="k">function</span> () {
+    verificarPasso()
+    basic.pause(150)
+})
+
+input.onButtonPressed(Button.B, <span class="k">function</span> () {
+    passos = 0
+    basic.showIcon(IconNames.Target)
+})</pre>
+</div></section>
+
+<!-- ============ 7 · GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Três passos. O acelerómetro já vem pronto a usar — não é preciso ligar nada.</p>
+
+  <div class="script">
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>O limiar</h3>
+        <p><span class="tag">LIMIAR</span> é o único valor do programa — a força mínima, numa escala que costuma ir até cerca de 2000, para contar como passo. Quanto mais alto, mais forte tem de ser o movimento.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> LIMIAR = 1200</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Medir e comparar</h3>
+        <p>Sessenta vezes por segundo — a cada 150 milissegundos — o programa lê a força e compara com o limiar. Se passar, soma um ao contador, mostra-o e toca um som curto.</p>
+        <pre class="mini">basic.forever(<span class="k">function</span> () {
+    verificarPasso()
+    basic.pause(150)
+})</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">03</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Reiniciar</h3>
+        <p>O botão B zera o contador — é o que se carrega entre rondas, sem precisar de reprogramar nada.</p>
+        <pre class="mini">input.onButtonPressed(Button.B, <span class="k">function</span> () {
+    passos = 0
+    basic.showIcon(IconNames.Target)
+})</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Uma edição só, sempre a mesma: o valor de <span class="tag">LIMIAR</span>, no passo 01, entre rondas de teste.</p>
+</div></section>
+
+<!-- ============ 8 · MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">1 por pessoa</td><td class="dim">Funciona também em V1</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">1 por pessoa</td><td class="dim">Sem cabo, para se poder mexer livremente</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">2–3</td><td class="dim">Só para carregar o programa</td></tr>
+      <tr><td>Portátil com MakeCode</td><td class="t">1–2</td><td class="dim">Um programa igual para todos os aparelhos</td></tr>
+      <tr><td>Fita ou braçadeira</td><td class="t">1 por pessoa</td><td class="dim">Opcional, para prender o micro:bit ao corpo</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 9 · SE CORRER MAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>Conta passos sem ninguém se mexer</td><td class="dim">Aparelho a vibrar em cima de uma superfície — pousar num sítio estável ou baixar o limiar</td></tr>
+      <tr><td>Não conta passos suaves</td><td class="dim">Descer o limiar em passos de 100 até aparecerem</td></tr>
+      <tr><td>Conta a mais em corrida</td><td class="dim">Normal — a força de cada passada a correr é maior; subir o limiar para essa ronda</td></tr>
+      <tr><td>Números completamente diferentes entre aparelhos</td><td class="dim">Confirmar que o limiar é o mesmo em todos antes de comparar</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 10 · EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde<br>isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Debounce</strong> — ignorar novos passos durante 300&nbsp;ms depois de contar um, para não contar duas vezes a mesma passada</li>
+    <li><strong>Distinguir gestos</strong> — usar <span class="tag">input.onGesture</span> para separar "salto" de "passo" por forma da curva, não só pela força</li>
+    <li><strong>Rádio</strong> — cada aparelho envia o seu total e um ecrã central soma os passos de todo o grupo</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 004</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+/* ---------- simulador de passo ---------- */
+const forca = document.getElementById("forca");
+const limiarP = document.getElementById("limiarP");
+const fill = document.getElementById("stepFill");
+const line = document.getElementById("stepLine");
+const passosOut = document.getElementById("passosOut");
+const resetBtn = document.getElementById("resetBtn");
+
+let passos = 0;
+let acimaAntes = false;
+
+function atualizar(recontar){
+  const v = +forca.value;
+  const t = +limiarP.value;
+  fill.style.height = (v/2000*100) + "%";
+  fill.style.background = v >= t ? "var(--accent-2)" : "var(--accent)";
+  line.style.top = (100 - t/2000*100) + "%";
+
+  if(recontar){
+    const acimaAgora = v >= t;
+    if(acimaAgora && !acimaAntes){
+      passos++;
+      passosOut.textContent = passos;
+    }
+    acimaAntes = acimaAgora;
+  }
+}
+forca.addEventListener("input", ()=>atualizar(true));
+limiarP.addEventListener("input", ()=>atualizar(false));
+resetBtn.addEventListener("click", ()=>{ passos = 0; passosOut.textContent = 0; });
+atualizar(false);
+
+/* ---------- copiar ---------- */
+document.getElementById("copyBtn").addEventListener("click", async e=>{
+  const txt = document.getElementById("code").innerText;
+  try{
+    await navigator.clipboard.writeText(txt);
+    e.target.textContent = "Copiado";
+  }catch(err){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    e.target.textContent = "Copiado";
+  }
+  setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+});
+</script>
+</body>
+</html>

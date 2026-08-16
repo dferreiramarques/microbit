@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradiente — uma fila sem falar · microbit.monco.io</title>
+<meta name="description" content="Atividade de 1h10: cada micro:bit mede a luz da sala, e o grupo forma uma fila do mais escuro ao mais claro sem dizer uma palavra.">
+<meta property="og:title" content="Gradiente — uma fila sem falar">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Um sensor de luz, um limiar, e a descoberta de que sensores dão opiniões, não verdades.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Gradiente 003 — acentos e assinatura ===== */
+body{--accent:#E8A72A;--accent-2:#1B39C4}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(56px,12vw,150px);font-weight:800;line-height:.86;margin-bottom:22px}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- simulador de luz (assinatura) --- */
+.grad-shell{border:2px solid var(--ink);margin-top:44px;background:var(--paper-2)}
+.grad-bar{height:56px;margin:22px 20px 0;position:relative;background:linear-gradient(90deg,#17171A,var(--accent) 100%);border:2px solid var(--ink)}
+.grad-marker{position:absolute;top:-9px;width:3px;height:74px;background:var(--ink)}
+.grad-marker::after{content:attr(data-label);position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+.grad-thr{position:absolute;top:-4px;width:2px;height:64px;background:var(--ink);opacity:.5;border-left:2px dashed var(--paper)}
+.grad-ctl{padding:34px 20px 18px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.grad-ctl div label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+input[type=number]{
+  font-family:var(--mono);font-size:16px;width:90px;padding:7px 9px;
+  border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+}
+.grad-status{border-top:2px solid var(--ink);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:13px}
+.verdict{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border:1px solid currentColor}
+.verdict.claro{color:#8a6d00;background:rgba(232,167,42,.18);border-color:#c9a227}
+.verdict.escuro{color:var(--paper);background:var(--ink)}
+
+@media (max-width:700px){
+  .grad-ctl{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>003 · Gradiente</span>
+  <span>1h10 · 8–14 micro:bit V2</span>
+</div></div>
+
+<!-- ============ 1 · ABERTURA ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 003 · Sensores, calibração, nível iniciação</div>
+  <h1>Gradiente</h1>
+  <p class="lede">Cada micro:bit mede a luz onde está e mostra um número. Sem trocar uma palavra, o grupo tem de se organizar numa fila do mais escuro ao mais claro — só a olhar para os ecrãs uns dos outros.</p>
+
+  <div class="grad-shell">
+    <div class="grad-bar" id="gradBar">
+      <div class="grad-marker" id="gradMarker" data-label="182" style="left:71%"></div>
+      <div class="grad-thr" id="gradThr" style="left:50%"></div>
+    </div>
+    <div class="grad-ctl">
+      <div>
+        <label for="luz">Luz simulada nesta posição</label>
+        <input type="range" id="luz" min="0" max="255" value="182">
+      </div>
+      <div>
+        <label for="limiar">Limiar — escuro / claro</label>
+        <input type="number" id="limiar" min="0" max="255" value="128">
+      </div>
+    </div>
+    <div class="grad-status">
+      <span>Leitura <b class="mono" id="luzOut">182</b></span>
+      <span class="verdict claro" id="verdict">Claro</span>
+    </div>
+  </div>
+
+  <div class="hero-meta">
+    <span>Sensor de luz · 0–255</span>
+    <span>1 variável editável</span>
+    <span>Sem rádio</span>
+    <span>Fila de 8 a 14 pessoas</span>
+  </div>
+</div></section>
+
+<!-- ============ 2 · O MECANISMO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Uma leitura,<br>uma decisão</h2>
+  <p>Não há rádio nesta atividade — cada aparelho só sabe o que mede em si próprio, e mostra-o. É o grupo, não o código, que organiza a informação.</p>
+  <div class="cols">
+    <div class="card"><span class="n">Sempre</span><h3>Mostra o número</h3><p>O ecrã mostra continuamente a leitura de luz naquele ponto exato da sala — o valor muda se a pessoa se mexer.</p></div>
+    <div class="card"><span class="n">Botão A</span><h3>Verifica a zona</h3><p>Compara a leitura com o limiar e mostra, por um instante, se está do lado escuro ou do lado claro.</p></div>
+    <div class="card"><span class="n">Fora do código</span><h3>O grupo organiza-se</h3><p>Ordenar pela leitura, ou agrupar pela zona, é trabalho humano — o programa só informa, não decide nada por ninguém.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 · CONCEITO CENTRAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Conceito</div>
+  <h2>O limiar é<br>uma escolha</h2>
+  <p>Dois micro:bits lado a lado, na mesma luz, raramente dão o mesmo número exato — cada sensor tem a sua própria margem de erro. E decidir onde acaba "escuro" e começa "claro" não é uma medida, é uma escolha de quem programa. Mudar o limiar não muda a sala; muda quem fica de que lado.</p>
+  <table>
+    <thead><tr><th>Limiar</th><th>Efeito</th></tr></thead>
+    <tbody>
+      <tr><td class="t">64</td><td class="dim">Quase todos ficam do lado "claro"</td></tr>
+      <tr><td class="t">128</td><td class="dim">Divisão a meio, mas sensível a quem está na fronteira</td></tr>
+      <tr><td class="t">192</td><td class="dim">Quase todos ficam do lado "escuro"</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 4 · SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 70 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>10 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Conseguem pôr-se em fila do mais escuro para o mais claro sem falar?» Ainda sem código, só com a pergunta.</p></div></div>
+    <div class="tl-row"><div class="t">00:10<small>20 min</small></div><div><h3>Guião do dinamizador · o código já escrito</h3><p>Carregar o programa em todos os aparelhos. Seguir os passos do guião mais abaixo: o que já vem feito, e o único valor que se muda — o limiar.</p></div></div>
+    <div class="tl-row pause"><div class="t">00:30<small>10 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">00:40<small>15 min</small></div><div><h3>A fila</h3><p>Espalhados pela sala, cada um lê o seu número. Sem falar, olhando só para os ecrãs, o grupo organiza-se numa fila do mais escuro ao mais claro.</p></div></div>
+    <div class="tl-row"><div class="t">00:55<small>10 min</small></div><div><h3>Mudar o limiar</h3><p>Com a fila feita, testar limiares diferentes e ver quem muda de zona. Discutir porque é que duas pessoas próximas na fila podem ficar em zonas diferentes.</p></div></div>
+    <div class="tl-row"><div class="t">01:05<small>5 min</small></div><div><h3>Fecho</h3><p>A fila ficou certa? Onde é que houve dúvidas — e porquê?</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ 5 · PREPARAÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Uma sala<br>com variação de luz</h2>
+  <p>Não há configuração por aparelho — todos correm o mesmo código. A preparação é do espaço: escolher uma sala com zonas visivelmente diferentes de luz (perto e longe da janela, luzes acesas só de um lado).</p>
+  <table>
+    <thead><tr><th>Zona</th><th>Como criar</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Escura</td><td class="dim">Persiana fechada, luzes desligadas, um canto sem janela</td></tr>
+      <tr><td class="t">Média</td><td class="dim">Luz normal de sala, sem foco direto</td></tr>
+      <tr><td class="t">Clara</td><td class="dim">Junto à janela ou por baixo de um foco</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 6 · CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. Cada equipa cola isto inteiro e edita só uma coisa, a seguir, passo a passo.</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">gradiente.ts · leitura de luz + limiar</span>
+    <button class="copy" id="copyBtn">Copiar código</button>
+  </div>
+  <pre id="code"><span class="c">// ===== GRADIENTE — microbit.monco.io =====</span>
+<span class="c">// mostra a luz medida; o botão A verifica a zona</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> LIMIAR = 128
+
+basic.forever(<span class="k">function</span> () {
+    basic.showNumber(input.lightLevel())
+})
+
+input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    <span class="k">if</span> (input.lightLevel() &gt;= LIMIAR) {
+        basic.showIcon(IconNames.Yes)
+    } <span class="k">else</span> {
+        basic.showIcon(IconNames.No)
+    }
+    basic.pause(900)
+})</pre>
+</div></section>
+
+<!-- ============ 7 · GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Três passos. O sensor de luz já vem pronto a usar no MakeCode — não é preciso ligar nada.</p>
+
+  <div class="script">
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>O limiar</h3>
+        <p><span class="tag">LIMIAR</span> é o único valor do programa — o número a partir do qual uma leitura conta como "claro". A escala vai de <span class="tag">0</span>, escuro total, a <span class="tag">255</span>, luz máxima.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> LIMIAR = 128</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Mostrar o número</h3>
+        <p>Em ciclo contínuo, o ecrã mostra a leitura de luz naquele preciso momento e lugar. É o que a fila vai usar para se ordenar — sem precisar de saber mais nada do código.</p>
+        <pre class="mini">basic.forever(<span class="k">function</span> () {
+    basic.showNumber(input.lightLevel())
+})</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">03</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Verificar a zona</h3>
+        <p>Ao carregar A, compara a leitura com <span class="tag">LIMIAR</span> e mostra um visto ou uma cruz — é a diferença entre um número contínuo e uma decisão de sim ou não.</p>
+        <pre class="mini">input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    <span class="k">if</span> (input.lightLevel() &gt;= LIMIAR) {
+        basic.showIcon(IconNames.Yes)
+    } <span class="k">else</span> {
+        basic.showIcon(IconNames.No)
+    }
+})</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Uma edição só, sempre a mesma: o valor de <span class="tag">LIMIAR</span>, no passo 01, antes da segunda ronda da fila.</p>
+</div></section>
+
+<!-- ============ 8 · MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">8–14</td><td class="dim">Funciona também em V1, sensor de luz é o mesmo</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">8–14</td><td class="dim">Sem cabo, para andar pela sala</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">2–3</td><td class="dim">Só para carregar o programa</td></tr>
+      <tr><td>Portátil com MakeCode</td><td class="t">1–2</td><td class="dim">Um programa igual para todos os aparelhos</td></tr>
+      <tr><td>Sala com zonas de luz distintas</td><td class="t">1</td><td class="dim">Janela de um lado, persiana ou cortina do outro</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 9 · SE CORRER MAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>Todos leem valores parecidos</td><td class="dim">A sala está uniforme; escurecer um canto de propósito com um pano ou caixa</td></tr>
+      <tr><td>O número salta muito</td><td class="dim">Sensor tapado pela mão ou pela correia — segurar o micro:bit pela borda</td></tr>
+      <tr><td>Ecrã ilegível à luz direta</td><td class="dim">Rodar o aparelho de costas para a janela ao ler</td></tr>
+      <tr><td>Ninguém concorda com a ordem</td><td class="dim">Normal — é o ponto da atividade. Registar as leituras e comparar depois</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 10 · EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde<br>isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Dois limiares</strong> — escuro, médio, claro, três zonas em vez de duas</li>
+    <li><strong>Rádio</strong> — cada aparelho anuncia a sua leitura por rádio; um 9.º aparelho recebe todas e calcula a média da sala</li>
+    <li><strong>Ao contrário</strong> — em vez de mostrar o número, mostrar só o ícone da zona, e o grupo tem de se ordenar só com sim ou não</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 003</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+/* ---------- simulador de luz ---------- */
+const luz = document.getElementById("luz");
+const limiar = document.getElementById("limiar");
+const marker = document.getElementById("gradMarker");
+const thr = document.getElementById("gradThr");
+const luzOut = document.getElementById("luzOut");
+const verdict = document.getElementById("verdict");
+
+function atualizar(){
+  const v = +luz.value;
+  const t = +limiar.value;
+  marker.style.left = (v/255*100) + "%";
+  marker.setAttribute("data-label", v);
+  thr.style.left = (t/255*100) + "%";
+  luzOut.textContent = v;
+  const claro = v >= t;
+  verdict.textContent = claro ? "Claro" : "Escuro";
+  verdict.className = "verdict " + (claro ? "claro" : "escuro");
+}
+luz.addEventListener("input", atualizar);
+limiar.addEventListener("input", atualizar);
+atualizar();
+
+/* ---------- copiar ---------- */
+document.getElementById("copyBtn").addEventListener("click", async e=>{
+  const txt = document.getElementById("code").innerText;
+  try{
+    await navigator.clipboard.writeText(txt);
+    e.target.textContent = "Copiado";
+  }catch(err){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    e.target.textContent = "Copiado";
+  }
+  setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+});
+</script>
+</body>
+</html>

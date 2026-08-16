@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volume — o jogo do silêncio · microbit.monco.io</title>
+<meta name="description" content="Atividade de 1h05: o microfone decide o que conta como grito ou sussurro, e o grupo tenta cumprir uma tarefa a manter o som todo abaixo do limiar.">
+<meta property="og:title" content="Volume — o jogo do silêncio">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Um microfone, um limiar, e um grupo a tentar não o ultrapassar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Volume 006 — acentos e assinatura ===== */
+body{--accent:#1BC49E;--accent-2:#C41B3A}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(56px,12vw,150px);font-weight:800;line-height:.86;margin-bottom:22px}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- VU-metro (assinatura) --- */
+.vu-shell{border:2px solid var(--ink);margin-top:44px;background:var(--paper-2);display:grid;grid-template-columns:120px 1fr}
+.vu-meter{border-right:2px solid var(--ink);padding:24px;display:flex;align-items:flex-end;justify-content:center}
+.vu-bar{width:34px;height:180px;border:2px solid var(--ink);background:var(--paper);position:relative;overflow:hidden}
+.vu-fill{position:absolute;bottom:0;left:0;width:100%;background:var(--accent);transition:height .05s linear}
+.vu-line{position:absolute;left:-2px;width:calc(100% + 4px);height:2px;background:var(--ink);border-top:2px dashed var(--accent-2)}
+.vu-info{padding:24px 22px;display:flex;flex-direction:column;justify-content:center;gap:18px}
+.vu-info label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+input[type=number]{
+  font-family:var(--mono);font-size:16px;width:100px;padding:7px 9px;
+  border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+}
+.vu-read{font-family:var(--mono);font-size:13px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
+.vu-read b{font-size:22px;font-weight:500;display:block}
+.verdict{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border:1px solid currentColor;display:inline-block}
+.verdict.baixo{color:#0d8a6c;background:rgba(27,196,158,.14)}
+.verdict.alto{color:var(--accent-2);background:rgba(196,27,58,.1)}
+
+@media (max-width:700px){
+  .vu-shell{grid-template-columns:90px 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>006 · Volume</span>
+  <span>1h05 · 8–14 micro:bit V2</span>
+</div></div>
+
+<!-- ============ 1 · ABERTURA ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 006 · Microfone, limiares, nível iniciação</div>
+  <h1>Volume</h1>
+  <p class="lede">O microfone do micro:bit mede o som em números. Um limiar decide onde acaba o sussurro e começa o grito — e o grupo inteiro tem de cumprir uma tarefa sem o deixar disparar.</p>
+
+  <div class="vu-shell">
+    <div class="vu-meter">
+      <div class="vu-bar">
+        <div class="vu-line" id="vuLine" style="bottom:59%"></div>
+        <div class="vu-fill" id="vuFill" style="height:35%"></div>
+      </div>
+    </div>
+    <div class="vu-info">
+      <div>
+        <label for="som">Som simulado</label>
+        <input type="range" id="som" min="0" max="255" value="90">
+      </div>
+      <div>
+        <label for="limiarV">Limiar — conta como grito</label>
+        <input type="number" id="limiarV" min="0" max="255" value="150">
+      </div>
+      <div class="vu-read">
+        <span>Leitura <b class="mono" id="somOut">90</b></span>
+        <span class="verdict baixo" id="verdict">Sussurro</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-meta">
+    <span>Microfone · 0–255</span>
+    <span>1 variável editável</span>
+    <span>Sem rádio</span>
+    <span>8 a 14 pessoas</span>
+  </div>
+</div></section>
+
+<!-- ============ 2 · O MECANISMO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Ouvir<br>e classificar</h2>
+  <p>Cada micro:bit ouve só o som à sua volta e decide, sozinho, se está acima ou abaixo do limiar. Não há um "volume da sala" — há catorze opiniões diferentes sobre o mesmo instante.</p>
+  <div class="cols">
+    <div class="card"><span class="n">Sempre</span><h3>Mede o som</h3><p><span class="tag">input.soundLevel()</span> devolve um número entre 0 e 255, medido pelo microfone embutido do V2.</p></div>
+    <div class="card"><span class="n">Comparação</span><h3>Grito ou sussurro?</h3><p>Compara a leitura com o limiar e mostra uma cara — contente se está calmo, zangada se passou a marca.</p></div>
+    <div class="card"><span class="n">Fora do código</span><h3>O grupo regula-se</h3><p>Manter todos os ecrãs contentes ao mesmo tempo é trabalho de equipa, não do programa.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 · CONCEITO CENTRAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Conceito</div>
+  <h2>O limiar depende<br>do fundo</h2>
+  <p>Um grito numa biblioteca silenciosa e uma conversa normal ao lado de uma rua com trânsito podem dar o mesmo número no microfone. O limiar não mede o som absoluto do mundo — mede a diferença entre estar calmo e estar alto, num sítio e num momento específicos.</p>
+  <table>
+    <thead><tr><th>Limiar</th><th>Efeito</th></tr></thead>
+    <tbody>
+      <tr><td class="t">80</td><td class="dim">Quase qualquer conversa dispara o alerta</td></tr>
+      <tr><td class="t">150</td><td class="dim">Deixa passar conversa normal, apanha vozes altas</td></tr>
+      <tr><td class="t">220</td><td class="dim">Só reage a gritos ou música alta</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 4 · SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 65 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>10 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Conseguem completar uma tarefa em grupo sem deixar nenhum ecrã ficar zangado?» Ainda sem código.</p></div></div>
+    <div class="tl-row"><div class="t">00:10<small>15 min</small></div><div><h3>Guião do dinamizador · o código já escrito</h3><p>Carregar o programa em todos os aparelhos. Seguir os passos do guião mais abaixo: o que já vem feito, e o único valor que se muda — o limiar.</p></div></div>
+    <div class="tl-row pause"><div class="t">00:25<small>10 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">00:35<small>20 min</small></div><div><h3>O jogo do silêncio</h3><p>Em grupo, montar uma pequena torre de copos ou passar um objeto ao longo da sala — sem deixar nenhum ecrã acender a cara zangada. Se acontecer, a tarefa recomeça.</p></div></div>
+    <div class="tl-row"><div class="t">00:55<small>5 min</small></div><div><h3>Apertar o limiar</h3><p>Baixar o limiar e repetir a tarefa — fica muito mais difícil manter todos "contentes".</p></div></div>
+    <div class="tl-row"><div class="t">01:00<small>5 min</small></div><div><h3>Fecho</h3><p>Foi mais difícil controlar o volume ou completar a tarefa? O que é que isso diz sobre trabalhar em grupo?</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ 5 · PREPARAÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Testar<br>o fundo sonoro</h2>
+  <p>Não há configuração por aparelho — todos correm o mesmo código. Antes de começar, vale a pena medir o silêncio da sala: com toda a gente calada, ver que número aparece, para calibrar o limiar de forma realista.</p>
+  <table>
+    <thead><tr><th>Situação</th><th>Leitura típica</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Sala em silêncio</td><td class="t">20–50</td></tr>
+      <tr><td class="t">Conversa normal</td><td class="t">80–140</td></tr>
+      <tr><td class="t">Voz alta ou grito</td><td class="t">180–255</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 6 · CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. Cada equipa cola isto inteiro e edita só uma coisa, a seguir, passo a passo.</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">volume.ts · microfone + limiar</span>
+    <button class="copy" id="copyBtn">Copiar código</button>
+  </div>
+  <pre id="code"><span class="c">// ===== VOLUME — microbit.monco.io =====</span>
+<span class="c">// mostra uma cara calma ou zangada, conforme o som</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> LIMIAR = 150
+
+basic.forever(<span class="k">function</span> () {
+    <span class="k">let</span> som = input.soundLevel()
+    <span class="k">if</span> (som &gt;= LIMIAR) {
+        basic.showIcon(IconNames.Angry)
+    } <span class="k">else</span> {
+        basic.showIcon(IconNames.Happy)
+    }
+    basic.pause(200)
+})</pre>
+</div></section>
+
+<!-- ============ 7 · GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Dois passos. O microfone já vem pronto a usar no V2 — não é preciso ligar nada nem adicionar extensões.</p>
+
+  <div class="script">
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>O limiar</h3>
+        <p><span class="tag">LIMIAR</span> é o único valor do programa — o número a partir do qual o som conta como "alto". Testar primeiro com a sala em silêncio para saber que número normal esperar.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> LIMIAR = 150</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Medir e mostrar a cara</h3>
+        <p>Em ciclo contínuo, lê o som e compara com o limiar. Uma cara contente é o sinal visual que o grupo vai usar durante a tarefa — sem precisar de olhar para números.</p>
+        <pre class="mini">basic.forever(<span class="k">function</span> () {
+    <span class="k">let</span> som = input.soundLevel()
+    <span class="k">if</span> (som &gt;= LIMIAR) {
+        basic.showIcon(IconNames.Angry)
+    } <span class="k">else</span> {
+        basic.showIcon(IconNames.Happy)
+    }
+    basic.pause(200)
+})</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Uma edição só, sempre a mesma: o valor de <span class="tag">LIMIAR</span>, no passo 01, entre a primeira tentativa e a ronda mais apertada.</p>
+</div></section>
+
+<!-- ============ 8 · MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">8–14</td><td class="dim">O microfone só existe no V2 — esta atividade não corre em V1</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">8–14</td><td class="dim">Sem cabo, para se poder andar pela sala</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">2–3</td><td class="dim">Só para carregar o programa</td></tr>
+      <tr><td>Portátil com MakeCode</td><td class="t">1–2</td><td class="dim">Um programa igual para todos os aparelhos</td></tr>
+      <tr><td>Copos ou objeto para a tarefa</td><td class="t">1 conjunto</td><td class="dim">Para a torre ou o jogo de passar sem barulho</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 9 · SE CORRER MAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>Mostra sempre zangado</td><td class="dim">Sala com ruído de fundo alto (ventilação, corredor) — subir o limiar ou mudar de sala</td></tr>
+      <tr><td>Nunca mostra zangado</td><td class="dim">Microfone tapado pela mão — segurar o aparelho pela borda, ecrã virado para cima</td></tr>
+      <tr><td>Reage a sopros ou bater no aparelho</td><td class="dim">O microfone capta qualquer som próximo, incluindo impacto — normal, faz parte da conversa sobre limitações do sensor</td></tr>
+      <tr><td>Cada aparelho reage de forma diferente</td><td class="dim">Confirmar que o limiar é o mesmo em todos antes de comparar reações</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 10 · EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde<br>isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Contador de alertas</strong> — somar quantas vezes o som passou o limiar, em vez de só mostrar a cara</li>
+    <li><strong>Três níveis</strong> — sussurro, normal e grito, com um ícone diferente para cada</li>
+    <li><strong>Rádio</strong> — um aparelho central recebe o volume de todos e mostra qual zona da sala está mais alta</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 006</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+/* ---------- VU-metro ---------- */
+const som = document.getElementById("som");
+const limiarV = document.getElementById("limiarV");
+const fill = document.getElementById("vuFill");
+const line = document.getElementById("vuLine");
+const somOut = document.getElementById("somOut");
+const verdict = document.getElementById("verdict");
+
+function atualizar(){
+  const v = +som.value;
+  const t = +limiarV.value;
+  fill.style.height = (v/255*100) + "%";
+  line.style.bottom = (t/255*100) + "%";
+  somOut.textContent = v;
+  const alto = v >= t;
+  fill.style.background = alto ? "var(--accent-2)" : "var(--accent)";
+  verdict.textContent = alto ? "Grito" : "Sussurro";
+  verdict.className = "verdict " + (alto ? "alto" : "baixo");
+}
+som.addEventListener("input", atualizar);
+limiarV.addEventListener("input", atualizar);
+atualizar();
+
+/* ---------- copiar ---------- */
+document.getElementById("copyBtn").addEventListener("click", async e=>{
+  const txt = document.getElementById("code").innerText;
+  try{
+    await navigator.clipboard.writeText(txt);
+    e.target.textContent = "Copiado";
+  }catch(err){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    e.target.textContent = "Copiado";
+  }
+  setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+});
+</script>
+</body>
+</html>

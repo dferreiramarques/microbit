@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>microbit.monco.io — atividades com micro:bit</title>
+<meta name="description" content="Catálogo de atividades práticas com micro:bit. Planos de sessão completos, código pronto e material de apoio.">
+<meta property="og:title" content="microbit.monco.io">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Atividades práticas com micro:bit — planos de sessão completos e código pronto a usar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+/* ---------- hero ---------- */
+.hero{padding-top:60px}
+.hero h1{
+  font-size:clamp(50px,10.5vw,128px);font-weight:800;line-height:.84;
+  letter-spacing:-.035em;margin-bottom:20px;
+}
+.hero h1 b{font-weight:800;color:var(--accent)}
+.hero-grid{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:end;margin-top:40px}
+
+/* ---------- matriz LED 5x5 (assinatura) ---------- */
+.matrix{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:7px;
+  background:var(--ink);padding:16px;width:190px;height:190px;flex:none;
+}
+.led{border-radius:2px;background:#2C2C30;transition:background-color .08s linear,box-shadow .08s}
+.led.on{background:var(--accent);box-shadow:0 0 9px rgba(232,68,42,.55)}
+.matrix-cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:10px;text-align:center;width:190px}
+
+/* ---------- filtros ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+.filters button{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:lowercase;
+  border:1px solid var(--rule);background:transparent;color:var(--muted);
+  padding:6px 12px;cursor:pointer;
+}
+.filters button:hover{border-color:var(--ink);color:var(--ink)}
+.filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+/* ---------- lista de atividades ---------- */
+.list{margin-top:34px;border-top:2px solid var(--ink)}
+.item{
+  display:grid;grid-template-columns:14px 96px 1fr 210px;gap:26px;
+  border-bottom:1px solid var(--rule);text-decoration:none;color:inherit;
+  padding:26px 0 26px 0;align-items:start;position:relative;
+  transition:background-color .14s;
+}
+.item:hover{background:rgba(0,0,0,.035)}
+.item:hover h3{text-decoration:underline;text-underline-offset:4px}
+.bar{width:14px;align-self:stretch;background:var(--c);min-height:76px}
+.serie{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:3px}
+.serie small{display:block;margin-top:6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.item h3{font-size:clamp(24px,3.2vw,34px);margin-bottom:4px}
+.item .sub{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--c);margin-bottom:12px}
+.item p{font-size:15.5px;margin:0 0 14px;max-width:56ch;color:#43434A}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips span{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;border:1px solid var(--rule);padding:2px 7px;color:var(--muted)}
+.facts{font-family:var(--mono);font-size:12px;line-height:1.95;color:var(--muted);text-align:right;padding-top:6px}
+.facts b{color:var(--ink);font-weight:500}
+.item.draft{opacity:.55;pointer-events:none}
+.item.draft::after{
+  content:"em preparação";position:absolute;right:0;top:26px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  border:1px solid var(--muted);padding:2px 7px;color:var(--muted);
+}
+.empty{padding:50px 0;font-family:var(--mono);font-size:13px;color:var(--muted)}
+
+@media (max-width:900px){
+  .hero-grid{grid-template-columns:1fr;align-items:start;gap:30px}
+  .item{grid-template-columns:10px 1fr;gap:16px}
+  .serie{display:none}
+  .facts{text-align:left;padding-top:12px;border-top:1px solid var(--rule);margin-top:4px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="./">microbit.monco.io</a>
+  <span>Atividades com micro:bit</span>
+  <span><a href="https://monco.io">monco.io</a></span>
+</div></div>
+
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Catálogo · <span id="contagem">—</span></div>
+  <h1>Atividades<br>com <b>micro:bit</b></h1>
+  <div class="hero-grid">
+    <div>
+      <p class="lede">Planos de sessão completos, testados em sala: o que dizer, quando, com que material, e o código pronto a colar no MakeCode.</p>
+      <p class="dim" style="font-size:15.5px">Cada atividade parte de uma coisa que acontece entre pessoas — e só depois chega ao aparelho. Tudo em português, tudo aberto, tudo adaptável.</p>
+    </div>
+    <div>
+      <div class="matrix" id="matrix" aria-hidden="true"></div>
+      <div class="matrix-cap">5 × 5 · a superfície toda</div>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Escolher</div>
+  <div class="filters" id="filters"></div>
+  <div class="list" id="list"></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Como usar</div>
+  <h2>Leva, corta,<br>adapta</h2>
+  <div class="cols">
+    <div class="card"><span class="n">Antes</span><h3>Lê o plano inteiro</h3><p>Cada página tem o cronograma ao minuto, a lista de material e a secção do que costuma correr mal. Vale a pena ler o fim primeiro.</p></div>
+    <div class="card"><span class="n">Durante</span><h3>Projeta a página</h3><p>As páginas funcionam como apoio visual. Os simuladores servem para mostrar o conceito antes de tocar no hardware.</p></div>
+    <div class="card"><span class="n">Depois</span><h3>Muda o que quiseres</h3><p>Os tempos são um ponto de partida, não uma prescrição. O código está escrito para converter em blocos e ser desmontado.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span>microbit.monco.io</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script src="assets/atividades.js"></script>
+<script>
+/* ---------------- matriz LED 5×5 ---------------- */
+const FONTE = {
+ "A":".###.,#...#,#####,#...#,#...#","B":"####.,#...#,####.,#...#,####.",
+ "C":".####,#....,#....,#....,.####","D":"####.,#...#,#...#,#...#,####.",
+ "E":"#####,#....,####.,#....,#####","F":"#####,#....,####.,#....,#....",
+ "G":".####,#....,#..##,#...#,.###.","H":"#...#,#...#,#####,#...#,#...#",
+ "I":"#####,..#..,..#..,..#..,#####","J":"#####,...#.,...#.,#..#.,.##..",
+ "K":"#...#,#..#.,###..,#..#.,#...#","L":"#....,#....,#....,#....,#####",
+ "M":"#...#,##.##,#.#.#,#...#,#...#","N":"#...#,##..#,#.#.#,#..##,#...#",
+ "O":".###.,#...#,#...#,#...#,.###.","P":"####.,#...#,####.,#....,#....",
+ "Q":".###.,#...#,#.#.#,#..#.,.##.#","R":"####.,#...#,####.,#..#.,#...#",
+ "S":".####,#....,.###.,....#,####.","T":"#####,..#..,..#..,..#..,..#..",
+ "U":"#...#,#...#,#...#,#...#,.###.","V":"#...#,#...#,#...#,.#.#.,..#..",
+ "W":"#...#,#...#,#.#.#,##.##,#...#","X":"#...#,.#.#.,..#..,.#.#.,#...#",
+ "Y":"#...#,.#.#.,..#..,..#..,..#..","Z":"#####,...#.,..#..,.#...,#####",
+ "0":".###.,#..##,#.#.#,##..#,.###.","1":"..#..,.##..,..#..,..#..,.###.",
+ "2":"###..,...#.,..#..,.#...,#####","3":"####.,....#,..##.,....#,####.",
+ "4":"#...#,#...#,#####,....#,....#","5":"#####,#....,####.,....#,####.",
+ "6":".###.,#....,####.,#...#,.###.","7":"#####,....#,...#.,..#..,.#...",
+ "8":".###.,#...#,.###.,#...#,.###.","9":".###.,#...#,.####,....#,.###.",
+ " ":".....,.....,.....,.....,.....",":":".....,..#..,.....,..#..,.....",
+ "\u00b7":".....,.....,..#..,.....,.....",".":".....,.....,.....,.....,..#..",
+ "?":"####.,....#,..##.,.....,..#.."
+};
+
+function colunas(txt){
+  const cols = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+  const out = [];
+  for(let i=0;i<5;i++) out.push([]);
+  for(const ch of txt.toUpperCase()){
+    const g = (FONTE[ch] || FONTE["?"]).split(",");
+    for(let c=0;c<5;c++){
+      for(let r=0;r<5;r++) out[r].push(g[r][c]==="#" ? 1 : 0);
+    }
+    for(let r=0;r<5;r++) out[r].push(0); // espaço entre letras
+  }
+  return out;
+}
+
+const matrix = document.getElementById("matrix");
+const leds = [];
+for(let i=0;i<25;i++){
+  const d = document.createElement("div");
+  d.className = "led"; matrix.appendChild(d); leds.push(d);
+}
+
+const MSG = "MICRO:BIT \u00b7 MONCO \u00b7 ";
+const buf = colunas("     " + MSG);
+let pos = 0;
+function passo(){
+  for(let r=0;r<5;r++){
+    for(let c=0;c<5;c++){
+      const v = buf[r][(pos + c) % buf[r].length];
+      leds[r*5+c].classList.toggle("on", !!v);
+    }
+  }
+  pos = (pos + 1) % buf[0].length;
+}
+const anima = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(anima){ passo(); setInterval(passo, 130); }
+else{ pos = 5; passo(); }
+
+/* ---------------- catálogo ---------------- */
+const lista = document.getElementById("list");
+const filtros = document.getElementById("filters");
+let ativo = null;
+
+document.getElementById("contagem").textContent =
+  ATIVIDADES.filter(a=>a.estado==="publicada").length + " publicadas";
+
+const tags = [...new Set(ATIVIDADES.flatMap(a=>a.tags))].sort((a,b)=>a.localeCompare(b,"pt"));
+function botao(rotulo, valor){
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = rotulo;
+  b.setAttribute("aria-pressed", ativo===valor ? "true" : "false");
+  b.addEventListener("click", ()=>{ ativo = (ativo===valor) ? null : valor; desenhar(); });
+  return b;
+}
+
+function desenhar(){
+  filtros.innerHTML = "";
+  filtros.appendChild(botao("todas", null));
+  tags.forEach(t=>filtros.appendChild(botao(t, t)));
+
+  const visiveis = ATIVIDADES.filter(a => !ativo || a.tags.includes(ativo));
+  lista.innerHTML = "";
+
+  if(!visiveis.length){
+    lista.innerHTML = '<p class="empty">Nada com esse tema, para já.</p>';
+    return;
+  }
+
+  visiveis.forEach(a=>{
+    const rascunho = a.estado !== "publicada";
+    const el = document.createElement(rascunho ? "div" : "a");
+    el.className = "item" + (rascunho ? " draft" : "");
+    el.style.setProperty("--c", a.cor);
+    if(!rascunho) el.href = a.ficheiro;
+    el.innerHTML =
+      '<div class="bar"></div>' +
+      '<div class="serie">' + a.serie + '<small>' + a.duracao + '</small></div>' +
+      '<div>' +
+        '<div class="sub">' + a.subtitulo + '</div>' +
+        '<h3>' + a.titulo + '</h3>' +
+        '<p>' + a.resumo + '</p>' +
+        '<div class="chips">' + a.tags.map(t=>'<span>'+t+'</span>').join("") + '</div>' +
+      '</div>' +
+      '<div class="facts">' +
+        '<b>' + a.duracao + '</b><br>' +
+        a.grupo + '<br>' +
+        a.idade + ' anos<br>' +
+        a.aparelhos +
+      '</div>';
+    lista.appendChild(el);
+  });
+}
+desenhar();
+</script>
+</body>
+</html>

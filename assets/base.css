@@ -1,0 +1,165 @@
+/* ==========================================================================
+   microbit.monco.io — base.css
+   Sistema partilhado por todas as páginas. Não editar por atividade:
+   cada atividade define apenas --accent / --accent-2 e os seus componentes
+   próprios num <style> local.
+   ========================================================================== */
+
+:root{
+  /* superfícies */
+  --paper:#EAEAE4;
+  --paper-2:#E1E1D9;
+  --ink:#17171A;
+  --muted:#7C7C74;
+  --rule:#C9C9C0;
+
+  /* acentos — sobrescritos por cada atividade */
+  --accent:#E8442A;
+  --accent-2:#1B39C4;
+  --lock:#F2C230;
+
+  /* tipografia */
+  --disp:"Bricolage Grotesque","Arial Black",system-ui,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,sans-serif;
+  --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+  /* medidas */
+  --wrap:1080px;
+  --gut:28px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:17px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color .5s ease;
+}
+img{max-width:100%;display:block}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 var(--gut)}
+section{padding:76px 0;border-top:2px solid var(--ink)}
+section.first{border-top:none}
+
+/* ---------- tipografia ---------- */
+h1,h2,h3{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:.95;margin:0}
+h2{font-size:clamp(30px,4.4vw,50px);margin-bottom:14px}
+h3{font-size:20px;letter-spacing:-.01em;margin-bottom:8px}
+p{margin:0 0 16px;max-width:66ch}
+.lede{font-size:20px;color:#3A3A3E;max-width:60ch}
+.dim{color:var(--muted)}
+strong{font-weight:600}
+a{color:inherit}
+
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:14px;margin-bottom:26px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+.mono{font-family:var(--mono)}
+.micro{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- barra de topo ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;background:var(--ink);color:var(--paper);
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  padding:9px 0;
+}
+.topbar .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+.topbar a{text-decoration:none;opacity:.72}
+.topbar a:hover{opacity:1}
+.topbar a.home{opacity:1;font-weight:500}
+.topbar span{white-space:nowrap}
+
+/* ---------- cartões genéricos ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:34px;margin-top:34px}
+.card{border-top:3px solid var(--ink);padding-top:14px}
+.card .n{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--muted);display:block;margin-bottom:9px}
+.card p{font-size:15.5px;margin:0}
+
+/* ---------- tabelas ---------- */
+table{width:100%;border-collapse:collapse;margin-top:26px;font-size:15px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--rule)}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink)}
+td.t{font-family:var(--mono);font-size:13px;white-space:nowrap}
+tbody tr:hover{background:rgba(0,0,0,.032)}
+
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border:1px solid currentColor;letter-spacing:.06em}
+.tag.a{color:var(--accent)}
+.tag.b{color:var(--accent-2)}
+
+/* ---------- cronograma ---------- */
+.tl{margin-top:34px}
+.tl-row{display:grid;grid-template-columns:96px 1fr;gap:22px;padding:18px 0;border-top:1px solid var(--rule);align-items:baseline}
+.tl-row:last-child{border-bottom:1px solid var(--rule)}
+.tl-row .t{font-family:var(--mono);font-size:13px}
+.tl-row .t small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.tl-row h3{margin-bottom:5px}
+.tl-row p{font-size:15.5px;margin:0;color:#43434A}
+.tl-row.pause{background:repeating-linear-gradient(45deg,transparent,transparent 7px,rgba(0,0,0,.045) 7px,rgba(0,0,0,.045) 14px)}
+
+/* ---------- código ---------- */
+.codebar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:28px}
+button.copy{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--ink);color:var(--paper);border:2px solid var(--ink);padding:9px 16px;cursor:pointer;
+}
+button.copy:hover{background:var(--paper);color:var(--ink)}
+pre{
+  background:var(--ink);color:#E6E6DE;padding:24px;overflow:auto;margin:12px 0 0;
+  font-family:var(--mono);font-size:12.5px;line-height:1.62;border:2px solid var(--ink);
+  max-height:520px;
+}
+pre .c{color:#8B9A7E}
+pre .k{color:#F2C230}
+pre .s{color:#E89A8A}
+pre.mini{padding:16px 18px;font-size:12px;line-height:1.55;max-height:none;margin-top:10px}
+
+/* ---------- guião do dinamizador ---------- */
+.script{margin-top:30px;border-top:1px solid var(--rule)}
+.step{display:grid;grid-template-columns:44px 1fr;gap:22px;padding:26px 0;border-bottom:1px solid var(--rule)}
+.step-n{font-family:var(--mono);font-size:13px;color:var(--muted);padding-top:3px}
+.step h3{margin-bottom:6px}
+.step p{font-size:15.5px;margin:0 0 4px;color:#43434A}
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border:1px solid currentColor;margin-bottom:10px}
+.badge.fixed{color:var(--muted)}
+.badge.edit{color:var(--ink);background:var(--lock);border-color:var(--lock)}
+
+/* ---------- listas ---------- */
+ul.clean{list-style:none;padding:0;margin:18px 0 0}
+ul.clean li{padding:11px 0 11px 26px;border-top:1px solid var(--rule);position:relative;font-size:15.5px;max-width:70ch}
+ul.clean li::before{content:"→";position:absolute;left:0;color:var(--muted);font-family:var(--mono)}
+
+/* ---------- botões / ligações ---------- */
+.btn{
+  display:inline-block;text-decoration:none;font-family:var(--mono);
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  border:2px solid var(--ink);padding:11px 18px;background:var(--ink);color:var(--paper);
+}
+.btn:hover{background:var(--paper);color:var(--ink)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper)}
+
+/* ---------- rodapé ---------- */
+footer{background:var(--ink);color:var(--paper);padding:44px 0;font-family:var(--mono);font-size:12px;letter-spacing:.08em}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer a{text-decoration:none;opacity:.7}
+footer a:hover{opacity:1}
+
+/* ---------- acessibilidade ---------- */
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  section{padding:56px 0}
+  .tl-row{grid-template-columns:1fr;gap:6px}
+  .step{grid-template-columns:1fr;gap:6px}
+  .step-n{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}

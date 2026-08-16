@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Código Morse — uma mensagem à distância · microbit.monco.io</title>
+<meta name="description" content="Atividade de 1h20: um micro:bit emissor, outro recetor, uma frase enviada em pontos e linhas até ao fundo do corredor.">
+<meta property="og:title" content="Código Morse — uma mensagem à distância">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Dois papéis, um canal, e uma frase que só chega inteira se o ritmo for certo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Código Morse 007 — acentos e assinatura ===== */
+body{--accent:#C4291B;--accent-2:#1B1B3A}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(48px,10vw,120px);font-weight:800;line-height:.86;margin-bottom:22px}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- banca de morse (assinatura) --- */
+.morse-shell{border:2px solid var(--ink);margin-top:44px;background:var(--paper-2)}
+.morse-screen{padding:26px 24px;border-bottom:2px solid var(--ink)}
+.morse-buffer{font-family:var(--mono);font-size:20px;letter-spacing:.2em;color:var(--accent);min-height:28px;word-break:break-all}
+.morse-msg{font-family:var(--disp);font-size:clamp(22px,4vw,34px);font-weight:800;margin-top:10px;min-height:1.2em;letter-spacing:.01em}
+.morse-msg .cursor{opacity:.35}
+.morse-btns{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--ink)}
+.morse-btns button{
+  font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--paper);color:var(--ink);border:none;padding:22px 10px;cursor:pointer;
+}
+.morse-btns button:hover{background:var(--paper-2)}
+.morse-btns button:active{background:var(--accent);color:#fff}
+.morse-btns button b{display:block;font-family:var(--disp);font-size:26px;font-weight:800;margin-bottom:4px}
+.morse-ctl{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 22px;border-top:2px solid var(--ink)}
+.morse-ctl .mini-btns{display:flex;gap:8px}
+button.mini{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  background:transparent;color:var(--ink);border:2px solid var(--ink);padding:8px 12px;cursor:pointer;
+}
+button.mini:hover{background:var(--ink);color:var(--paper)}
+
+@media (max-width:600px){
+  .morse-btns button{padding:16px 8px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>007 · Código Morse</span>
+  <span>1h20 · 2 micro:bit V2 por grupo</span>
+</div></div>
+
+<!-- ============ 1 · ABERTURA ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 007 · Rádio, ritmo, codificação, nível iniciação</div>
+  <h1>Código Morse</h1>
+  <p class="lede">Um micro:bit só sabe fazer pontos e linhas. A frase inteira mora no ritmo de quem carrega nos botões — e só existe, do outro lado, se alguém souber ouvir as pausas certas.</p>
+
+  <div class="morse-shell">
+    <div class="morse-screen">
+      <div class="morse-buffer" id="buffer">&nbsp;</div>
+      <div class="morse-msg" id="msg">Experimenta escrever uma palavra<span class="cursor">_</span></div>
+    </div>
+    <div class="morse-btns">
+      <button type="button" id="btnPonto"><b>· Ponto</b>botão A · som curto</button>
+      <button type="button" id="btnLinha"><b>– Linha</b>botão B · som longo</button>
+    </div>
+    <div class="morse-ctl">
+      <span class="dim mono" style="font-size:12px">Junta pontos e linhas, depois separa a letra</span>
+      <div class="mini-btns">
+        <button class="mini" id="btnSeparar" type="button">Separar letra</button>
+        <button class="mini" id="btnReset" type="button">Abanar · reiniciar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-meta">
+    <span>2 papéis · emissor e recetor</span>
+    <span>1 variável partilhada</span>
+    <span>Rádio, canal à escolha</span>
+    <span>Grupos de 4, pares de 2</span>
+  </div>
+</div></section>
+
+<!-- ============ 2 · O MECANISMO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Dois papéis,<br>um código cada</h2>
+  <p>Ao contrário das outras atividades do catálogo, aqui os dois micro:bits do grupo correm programas diferentes — um só emite, o outro só recebe. Nenhum dos dois sabe soletrar; sabem só emitir e ecoar dois símbolos.</p>
+  <div class="cols">
+    <div class="card"><span class="n">Emissor</span><h3>Botões viram símbolos</h3><p>Botão A mostra um ponto e toca um som curto. Botão B mostra uma linha e toca um som longo. Cada carregar envia esse símbolo por rádio.</p></div>
+    <div class="card"><span class="n">Recetor</span><h3>Ecoa o que chega</h3><p>Ao receber um símbolo, mostra e toca exatamente o mesmo que o emissor mostrou — é o eco que a equipa de longe vai ver e ouvir.</p></div>
+    <div class="card"><span class="n">Os dois</span><h3>Abanar reinicia</h3><p>Um abanão manda um sinal de reset: o recetor mostra uma cruz e limpa o ecrã. Combina-se antes: "se abanar, esqueçam tudo e recomecem a escrever."</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 · CONCEITO CENTRAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Conceito</div>
+  <h2>A pausa também<br>é informação</h2>
+  <p>O programa nunca diz "isto é o fim de uma letra". Não há esse sinal. Quem decide onde uma letra acaba é o ritmo de quem emite — uma pausa curta separa símbolos da mesma letra, uma pausa mais longa separa letras. É o operador, não o código, que carrega o significado.</p>
+  <table>
+    <thead><tr><th>Intervalo</th><th>Duração relativa</th><th>Significa</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Ponto</td><td class="t">1 unidade</td><td class="dim">Símbolo</td></tr>
+      <tr><td class="t">Linha</td><td class="t">3 unidades</td><td class="dim">Símbolo</td></tr>
+      <tr><td class="t">Entre símbolos</td><td class="t">1 unidade</td><td class="dim">Mesma letra</td></tr>
+      <tr><td class="t">Entre letras</td><td class="t">3 unidades</td><td class="dim">Letra nova</td></tr>
+      <tr><td class="t">Entre palavras</td><td class="t">7 unidades</td><td class="dim">Palavra nova</td></tr>
+    </tbody>
+  </table>
+  <p class="dim" style="font-size:14px;margin-top:14px">É a proporção clássica do Morse internacional. Nesta atividade não se cronometra ao milissegundo — combina-se só "pausa curta" e "pausa longa, conta até três" antes de começar.</p>
+</div></section>
+
+<!-- ============ 4 · SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 80 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>10 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Sem falar, só com pontos e linhas, conseguem mandar uma frase até ao fundo do corredor?» Mostrar o cartaz do alfabeto — ainda sem código.</p></div></div>
+    <div class="tl-row"><div class="t">00:10<small>20 min</small></div><div><h3>Guião do dinamizador · os dois códigos já escritos</h3><p>Cada grupo de 4 carrega um programa num micro:bit — emissor — e outro programa no segundo — recetor. Seguir os passos do guião mais abaixo: o que já vem feito, e o único valor que se muda — o canal, igual nos dois aparelhos.</p></div></div>
+    <div class="tl-row pause"><div class="t">00:30<small>10 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">00:40<small>10 min</small></div><div><h3>Preparar a mensagem</h3><p>O grupo divide-se em dois pares. O par do emissor escolhe uma frase curta — três a cinco palavras — e escreve-a em Morse no papel, usando o cartaz do alfabeto. Ensaiam o ritmo antes de sair de perto um do outro.</p></div></div>
+    <div class="tl-row"><div class="t">00:50<small>20 min</small></div><div><h3>Transmissão a longa distância</h3><p>O par do recetor afasta-se — outra sala, ou o fundo do corredor — com o cartaz do alfabeto na mão. O par do emissor envia a frase devagar. O par do recetor vai escrevendo os símbolos e traduz letra a letra.</p></div></div>
+    <div class="tl-row"><div class="t">01:10<small>10 min</small></div><div><h3>Fecho</h3><p>A frase chegou inteira? Onde é que se perdeu uma letra — foi o ritmo, foi o alcance do rádio, foi a tradução? Trocar os papéis, se houver tempo.</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ 5 · PREPARAÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Um canal<br>por grupo</h2>
+  <p>Se houver mais do que um grupo na mesma sala, cada grupo precisa do seu próprio canal de rádio — caso contrário todos ouvem as mensagens de todos. O emissor e o recetor do mesmo grupo têm sempre de partilhar o mesmo canal.</p>
+  <table>
+    <thead><tr><th>Grupo</th><th>Canal</th><th>Emissor</th><th>Recetor</th></tr></thead>
+    <tbody>
+      <tr><td class="t">1</td><td class="t">11</td><td class="dim">Programa emissor</td><td class="dim">Programa recetor</td></tr>
+      <tr><td class="t">2</td><td class="t">12</td><td class="dim">Programa emissor</td><td class="dim">Programa recetor</td></tr>
+      <tr><td class="t">3</td><td class="t">13</td><td class="dim">Programa emissor</td><td class="dim">Programa recetor</td></tr>
+      <tr><td class="t">4</td><td class="t">14</td><td class="dim">Programa emissor</td><td class="dim">Programa recetor</td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:30px">O cartaz de apoio para os grupos recetores — imprimir ou projetar antes da transmissão:</p>
+  <p><a class="btn ghost" href="alfabeto-morse.svg" target="_blank" rel="noopener">Abrir o alfabeto Morse em tamanho grande</a></p>
+  <img src="alfabeto-morse.svg" alt="Cartaz do alfabeto Morse, de A a Z e de 0 a 9, com o código de pontos e linhas de cada carácter" style="margin-top:20px;border:2px solid var(--ink)">
+</div></section>
+
+<!-- ============ 6 · CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>Dois programas, um por aparelho. No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. Cada grupo cola os dois inteiros e edita só uma coisa em cada um — o canal — a seguir, passo a passo.</p>
+
+  <p class="dim mono" style="font-size:12px;margin-top:30px">morse-emissor.ts · botões A e B</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">carregar no micro:bit que fica com o grupo</span>
+    <button class="copy" id="copyBtnEmissor">Copiar código</button>
+  </div>
+  <pre id="codeEmissor"><span class="c">// ===== CÓDIGO MORSE · EMISSOR — microbit.monco.io =====</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> CANAL = 11
+
+radio.setGroup(CANAL)
+
+input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    basic.showLeds(`
+        . . . . .
+        . . . . .
+        . . # . .
+        . . . . .
+        . . . . .
+        `)
+    music.playTone(880, 120)
+    radio.sendString(<span class="s">"PONTO"</span>)
+    basic.pause(150)
+    basic.clearScreen()
+})
+
+input.onButtonPressed(Button.B, <span class="k">function</span> () {
+    basic.showLeds(`
+        . . . . .
+        . . . . .
+        # # # # #
+        . . . . .
+        . . . . .
+        `)
+    music.playTone(880, 450)
+    radio.sendString(<span class="s">"LINHA"</span>)
+    basic.pause(150)
+    basic.clearScreen()
+})
+
+input.onGesture(Gesture.Shake, <span class="k">function</span> () {
+    radio.sendString(<span class="s">"RESET"</span>)
+    basic.showIcon(IconNames.No)
+    basic.pause(400)
+    basic.clearScreen()
+})
+
+basic.showIcon(IconNames.Yes)</pre>
+
+  <p class="dim mono" style="font-size:12px;margin-top:38px">morse-recetor.ts · escuta o rádio</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">carregar no micro:bit que se afasta</span>
+    <button class="copy" id="copyBtnRecetor">Copiar código</button>
+  </div>
+  <pre id="codeRecetor"><span class="c">// ===== CÓDIGO MORSE · RECETOR — microbit.monco.io =====</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> CANAL = 11
+
+radio.setGroup(CANAL)
+
+radio.onReceivedString(<span class="k">function</span> (receivedString) {
+    <span class="k">if</span> (receivedString == <span class="s">"PONTO"</span>) {
+        basic.showLeds(`
+            . . . . .
+            . . . . .
+            . . # . .
+            . . . . .
+            . . . . .
+            `)
+        music.playTone(660, 120)
+        basic.pause(150)
+        basic.clearScreen()
+    } <span class="k">else</span> <span class="k">if</span> (receivedString == <span class="s">"LINHA"</span>) {
+        basic.showLeds(`
+            . . . . .
+            . . . . .
+            # # # # #
+            . . . . .
+            . . . . .
+            `)
+        music.playTone(660, 450)
+        basic.pause(150)
+        basic.clearScreen()
+    } <span class="k">else</span> <span class="k">if</span> (receivedString == <span class="s">"RESET"</span>) {
+        basic.showIcon(IconNames.No)
+        basic.pause(400)
+        basic.clearScreen()
+    }
+})
+
+basic.showIcon(IconNames.Yes)</pre>
+</div></section>
+
+<!-- ============ 7 · GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Quatro passos — dois códigos, uma só variável repetida em ambos.</p>
+
+  <div class="script">
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>O canal, nos dois aparelhos</h3>
+        <p><span class="tag">CANAL</span> é o único valor do programa — e tem de ser exatamente igual no emissor e no recetor do mesmo grupo, ou não se ouvem. Se houver vários grupos na sala, cada um usa um canal diferente.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> CANAL = 11
+
+radio.setGroup(CANAL)</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge fixed">Já vem assim · emissor</span>
+        <h3>Os dois botões</h3>
+        <p>Botão A mostra um ponto e um som curto; botão B mostra uma linha e um som longo. Os dois enviam o respetivo símbolo por rádio antes de limpar o ecrã, prontos para o próximo.</p>
+        <pre class="mini">input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    basic.showLeds(`...`)
+    music.playTone(880, 120)
+    radio.sendString(<span class="s">"PONTO"</span>)
+})</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">03</div>
+      <div>
+        <span class="badge fixed">Já vem assim · emissor e recetor</span>
+        <h3>Abanar para reiniciar</h3>
+        <p>Um gesto de abanar envia <span class="tag">RESET</span> por rádio. O recetor mostra uma cruz por instantes e limpa o ecrã — o sinal combinado para "esqueçam tudo, recomeço a mensagem".</p>
+        <pre class="mini">input.onGesture(Gesture.Shake, <span class="k">function</span> () {
+    radio.sendString(<span class="s">"RESET"</span>)
+    basic.showIcon(IconNames.No)
+})</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">04</div>
+      <div>
+        <span class="badge fixed">Já vem assim · recetor</span>
+        <h3>Ecoar o que chega</h3>
+        <p>O recetor não sabe soletrar — só repete, em ecrã e som, exatamente o símbolo que recebeu. É a equipa do lado de fora, com o cartaz na mão, que transforma pontos e linhas em letras.</p>
+        <pre class="mini">radio.onReceivedString(<span class="k">function</span> (receivedString) {
+    <span class="k">if</span> (receivedString == <span class="s">"PONTO"</span>) { … }
+    <span class="k">else</span> <span class="k">if</span> (receivedString == <span class="s">"LINHA"</span>) { … }
+    <span class="k">else</span> <span class="k">if</span> (receivedString == <span class="s">"RESET"</span>) { … }
+})</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Uma edição só, repetida em dois ficheiros: o valor de <span class="tag">CANAL</span>, no passo 01, igual no emissor e no recetor.</p>
+</div></section>
+
+<!-- ============ 8 · MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">2 por grupo</td><td class="dim">Altifalante integrado — essencial para o som</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">2 por grupo</td><td class="dim">Sem cabo, o recetor tem de se afastar</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">2–3</td><td class="dim">Só para carregar os programas, partilhados</td></tr>
+      <tr><td>Portátil com MakeCode</td><td class="t">1 por grupo</td><td class="dim">Carrega os dois programas, um a seguir ao outro</td></tr>
+      <tr><td>Cartaz do alfabeto Morse</td><td class="t">1 por par recetor</td><td class="dim">Impresso ou no telemóvel — ficheiro nesta página</td></tr>
+      <tr><td>Papel e caneta</td><td class="t">1 por par</td><td class="dim">Escrever a frase antes de emitir, e a tradução ao receber</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 9 · SE CORRER MAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>O recetor não reage a nada</td><td class="dim">Confirmar que o canal é exatamente igual nos dois programas</td></tr>
+      <tr><td>Recebe mensagens de outro grupo</td><td class="dim">Dois grupos com o mesmo canal — mudar um deles</td></tr>
+      <tr><td>Deixa de responder a meio da sala</td><td class="dim">Fora de alcance — aproximar até voltar a responder e marcar esse limite</td></tr>
+      <tr><td>Letras coladas, difíceis de separar</td><td class="dim">O emissor está a carregar depressa demais — combinar contar "um, dois, três" nas pausas entre letras</td></tr>
+      <tr><td>Confundem ponto com linha ao ouvir</td><td class="dim">Normal ao início — reforçar que a linha dura claramente mais, quase o dobro</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 10 · EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde<br>isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Conversa a dois sentidos</strong> — dar a cada par os dois papéis, emissor e recetor, para responderem um ao outro</li>
+    <li><strong>SOS cronometrado</strong> — todos os grupos enviam "SOS" ao mesmo tempo; o primeiro par a decifrar corretamente ganha</li>
+    <li><strong>Sem cartaz</strong> — para grupos mais avançados, decorar as dez letras mais comuns em português antes de tirar o apoio visual</li>
+    <li><strong>Registo automático</strong> — um terceiro micro:bit, ligado por série a um computador, regista os símbolos recebidos com data e hora</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 007</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+/* ---------- banca de morse ---------- */
+const MORSE = {
+  "•–":"A","–•••":"B","–•–•":"C","–••":"D","•":"E","••–•":"F","––•":"G","••••":"H",
+  "••":"I","•–––":"J","–•–":"K","•–••":"L","––":"M","–•":"N","–––":"O","•––•":"P",
+  "––•–":"Q","•–•":"R","•••":"S","–":"T","••–":"U","•••–":"V","•––":"W","–••–":"X",
+  "–•––":"Y","––••":"Z",
+  "–––––":"0","•––––":"1","••–––":"2","•••––":"3","••••–":"4","•••••":"5",
+  "–••••":"6","––•••":"7","–––••":"8","––––•":"9"
+};
+
+let ac = null;
+function ctx(){ if(!ac) ac = new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); return ac; }
+function bip(dur){
+  const c = ctx(), t = c.currentTime;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = "square"; o.frequency.value = 740;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.18, t+0.015);
+  g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t+dur+0.03);
+}
+
+const bufferEl = document.getElementById("buffer");
+const msgEl = document.getElementById("msg");
+let buffer = "";
+let mensagem = "";
+let primeira = true;
+
+function render(){
+  bufferEl.textContent = buffer || " ";
+  msgEl.innerHTML = (mensagem || "") + '<span class="cursor">_</span>';
+}
+
+function limparPlaceholder(){
+  if(primeira){ primeira = false; mensagem = ""; }
+}
+
+document.getElementById("btnPonto").addEventListener("click", ()=>{
+  limparPlaceholder();
+  buffer += "•";
+  bip(0.09);
+  render();
+});
+document.getElementById("btnLinha").addEventListener("click", ()=>{
+  limparPlaceholder();
+  buffer += "–";
+  bip(0.32);
+  render();
+});
+document.getElementById("btnSeparar").addEventListener("click", ()=>{
+  if(!buffer){ return; }
+  const letra = MORSE[buffer] || "?";
+  mensagem += letra;
+  buffer = "";
+  render();
+});
+document.getElementById("btnReset").addEventListener("click", ()=>{
+  buffer = ""; mensagem = ""; primeira = true;
+  msgEl.innerHTML = 'Experimenta escrever uma palavra<span class="cursor">_</span>';
+  bufferEl.textContent = " ";
+});
+render();
+
+/* ---------- copiar ---------- */
+function ligarCopiar(botaoId, codeId){
+  document.getElementById(botaoId).addEventListener("click", async e=>{
+    const txt = document.getElementById(codeId).innerText;
+    try{
+      await navigator.clipboard.writeText(txt);
+      e.target.textContent = "Copiado";
+    }catch(err){
+      const ta = document.createElement("textarea");
+      ta.value = txt; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+      e.target.textContent = "Copiado";
+    }
+    setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+  });
+}
+ligarCopiar("copyBtnEmissor", "codeEmissor");
+ligarCopiar("copyBtnRecetor", "codeRecetor");
+</script>
+</body>
+</html>

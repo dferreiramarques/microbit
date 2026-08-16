@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semáforo humano — retransmitir um sinal · microbit.monco.io</title>
+<meta name="description" content="Atividade de 55 minutos: um sinal de rádio passa de pessoa em pessoa numa fila, e o grupo descobre quanto tempo demora a chegar ao fim.">
+<meta property="og:title" content="Semáforo humano — retransmitir um sinal">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Sem sensores. Só um sinal, um atraso, e uma fila de pessoas a passá-lo adiante.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Semáforo humano 002 — acentos e assinatura ===== */
+body{--accent:#2AC46B;--accent-2:#C4291B}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(56px,12vw,140px);font-weight:800;line-height:.86;margin-bottom:22px}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- onda humana (assinatura) --- */
+.wave-shell{border:2px solid var(--ink);margin-top:44px;background:var(--paper-2)}
+.wave-row{display:flex;justify-content:space-between;padding:36px 22px;gap:8px}
+.wnode{width:38px;height:38px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);flex:none;transition:background-color .1s,transform .1s}
+.wnode.hit{background:var(--accent);transform:scale(1.18);box-shadow:0 0 12px rgba(42,196,107,.55)}
+.wave-ctl{border-top:2px solid var(--ink);padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center}
+.wave-ctl label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.readout{font-family:var(--mono);font-size:13px;text-align:right;line-height:1.7;white-space:nowrap}
+.readout b{font-size:22px;font-weight:500;display:block}
+button.start{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--ink);color:var(--paper);border:2px solid var(--ink);padding:11px 20px;cursor:pointer;
+}
+button.start:hover{background:var(--paper);color:var(--ink)}
+button.start:disabled{opacity:.4;cursor:default}
+.wave-total{font-family:var(--mono);font-size:12px;color:var(--muted);padding:0 20px 18px}
+
+@media (max-width:700px){
+  .wave-row{padding:26px 10px}
+  .wnode{width:22px;height:22px}
+  .wave-ctl{grid-template-columns:1fr}
+  .readout{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>002 · Semáforo humano</span>
+  <span>55 min · 8 micro:bit V2</span>
+</div></div>
+
+<!-- ============ 1 · ABERTURA ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 002 · Rádio, retransmissão, nível iniciação</div>
+  <h1>Semáforo<br>humano</h1>
+  <p class="lede">Um micro:bit não sabe nada além do que lhe chega. Recebe um sinal, espera um instante, passa-o adiante. Uma fila de oito pessoas com isto nas mãos é, sem ninguém perceber logo, uma rede de retransmissão.</p>
+
+  <div class="wave-shell">
+    <div class="wave-row" id="waveRow"></div>
+    <div class="wave-ctl">
+      <div>
+        <label for="atraso">Atraso antes de retransmitir</label>
+        <input type="range" id="atraso" min="80" max="900" value="350">
+      </div>
+      <div class="readout">
+        <span class="dim" id="atrasoOut">350 ms por pessoa</span>
+        <button class="start" id="startBtn" type="button">Iniciar onda</button>
+      </div>
+    </div>
+    <div class="wave-total" id="totalOut">Tempo até ao fim da fila: —</div>
+  </div>
+
+  <div class="hero-meta">
+    <span>Sem sensores</span>
+    <span>1 variável editável</span>
+    <span>Rádio grupo 9</span>
+    <span>Fila de 8 a 14 pessoas</span>
+  </div>
+</div></section>
+
+<!-- ============ 2 · O MECANISMO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Receber, esperar,<br>passar adiante</h2>
+  <p>Não há um centro a coordenar a fila. Cada micro:bit corre a mesma regra pequena, sem saber que está numa fila.</p>
+  <div class="cols">
+    <div class="card"><span class="n">Início</span><h3>Alguém carrega A</h3><p>O primeiro da fila mostra um ícone e envia o sinal por rádio. É o único momento em que alguém decide alguma coisa.</p></div>
+    <div class="card"><span class="n">Receção</span><h3>Chega o sinal</h3><p>Cada aparelho, ao receber, acende o ícone — é o momento visível, o que a pessoa ao lado vê e sabe que chegou a sua vez.</p></div>
+    <div class="card"><span class="n">Espera e reenvio</span><h3>Passa adiante</h3><p>Depois de um atraso fixo, reenvia o mesmo sinal por rádio. Quem estiver a seguir na fila recebe-o e repete o processo.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 · CONCEITO CENTRAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Conceito</div>
+  <h2>A demora<br>soma-se</h2>
+  <p>Um único micro:bit passa o sinal quase de imediato. Mas numa fila de oito, o atraso de cada um soma-se ao anterior — é o mesmo mecanismo por trás de uma mensagem que demora a atravessar uma rede de verdade, ou de uma onda de adeptos num estádio.</p>
+  <table>
+    <thead><tr><th>Atraso por pessoa</th><th>Fila de 8</th><th>Fila de 14</th></tr></thead>
+    <tbody>
+      <tr><td class="t">100 ms</td><td class="t">0,8 s</td><td class="t">1,4 s</td></tr>
+      <tr><td class="t">350 ms</td><td class="t">2,8 s</td><td class="t">4,9 s</td></tr>
+      <tr><td class="t">900 ms</td><td class="t">7,2 s</td><td class="t">12,6 s</td></tr>
+    </tbody>
+  </table>
+  <p class="dim" style="font-size:14px;margin-top:14px">Tempo total ≈ atraso × (pessoas − 1). O primeiro não espera; só quem recebe é que espera antes de reenviar.</p>
+</div></section>
+
+<!-- ============ 4 · SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 55 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>10 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Quanto tempo demora um sinal a atravessar esta sala, pessoa a pessoa?» Ninguém sabe. Vamos medir.</p></div></div>
+    <div class="tl-row"><div class="t">00:10<small>15 min</small></div><div><h3>Guião do dinamizador · o código já escrito</h3><p>Carregar o mesmo programa em todos os aparelhos. Seguir os três passos do guião mais abaixo: o que já vem feito, e o único valor que se muda — o atraso.</p></div></div>
+    <div class="tl-row pause"><div class="t">00:25<small>5 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">00:30<small>20 min</small></div><div><h3>A fila</h3><p>Em fila, um micro:bit por pessoa, cada um a postos. O primeiro carrega A e cronometra-se o tempo até ao último acender. Repetir com atrasos diferentes — 100&nbsp;ms, depois 900&nbsp;ms — e comparar com a previsão da tabela.</p></div></div>
+    <div class="tl-row"><div class="t">00:50<small>5 min</small></div><div><h3>Fecho</h3><p>O tempo medido bateu certo com a conta? Onde mais é que uma informação passa de mão em mão até chegar ao fim?</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ 5 · PREPARAÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Uma fila,<br>uma ordem</h2>
+  <p>Não há configuração por aparelho — todos correm o mesmo código. A única preparação é física: dispor os participantes em fila, com espaço entre cada um para o rádio não confundir quem está a duas posições de distância.</p>
+  <table>
+    <thead><tr><th>#</th><th>Papel</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td class="t">1.º</td><td class="t">Início</td><td class="dim">Carrega o botão A para arrancar a onda</td></tr>
+      <tr><td class="t">2.º–N</td><td class="t">Retransmissão</td><td class="dim">Só reage ao que recebe, código idêntico</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 6 · CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. É o mesmo código para toda a fila — cada equipa cola isto inteiro e edita só uma coisa, a seguir, passo a passo.</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">semaforo-humano.ts · retransmissão com atraso</span>
+    <button class="copy" id="copyBtn">Copiar código</button>
+  </div>
+  <pre id="code"><span class="c">// ===== SEMÁFORO HUMANO — microbit.monco.io =====</span>
+<span class="c">// recebe, espera, passa adiante</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> ATRASO = 350
+
+<span class="k">let</span> ocupado = <span class="k">false</span>
+
+<span class="k">function</span> receberOnda() {
+    <span class="k">if</span> (!ocupado) {
+        ocupado = <span class="k">true</span>
+        basic.showIcon(IconNames.Yes)
+        basic.pause(ATRASO)
+        radio.sendString(<span class="s">"ONDA"</span>)
+        basic.pause(600)
+        basic.showIcon(IconNames.SmallDiamond)
+        ocupado = <span class="k">false</span>
+    }
+}
+
+input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    basic.showIcon(IconNames.Yes)
+    radio.sendString(<span class="s">"ONDA"</span>)
+})
+
+radio.onReceivedString(<span class="k">function</span> (receivedString) {
+    <span class="k">if</span> (receivedString == <span class="s">"ONDA"</span>) {
+        receberOnda()
+    }
+})
+
+radio.setGroup(9)
+basic.showIcon(IconNames.SmallDiamond)</pre>
+</div></section>
+
+<!-- ============ 7 · GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Três passos. É a mais curta de todas as atividades — de propósito, para grupos a dar os primeiros passos com código.</p>
+
+  <div class="script">
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>O atraso</h3>
+        <p><span class="tag">ATRASO</span> é o único valor do programa. É quanto tempo, em milissegundos, cada pessoa espera entre receber o sinal e reenviá-lo. Mudar este número antes de cada ronda da fila — é o que se está a testar.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> ATRASO = 350</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Quem começa</h3>
+        <p>Só o primeiro da fila carrega no botão A. Mostra o ícone de imediato, sem esperar — o atraso só existe para quem recebe.</p>
+        <pre class="mini">input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    basic.showIcon(IconNames.Yes)
+    radio.sendString(<span class="s">"ONDA"</span>)
+})</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">03</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Receber, esperar, passar adiante</h3>
+        <p>Ao receber <span class="tag">ONDA</span>, o aparelho acende o ícone para quem está a olhar, espera <span class="tag">ATRASO</span>, e reenvia. O sinalizador <span class="tag">ocupado</span> impede que o mesmo aparelho reenvie duas vezes seguidas por ouvir ecos da fila.</p>
+        <pre class="mini">radio.onReceivedString(<span class="k">function</span> (receivedString) {
+    <span class="k">if</span> (receivedString == <span class="s">"ONDA"</span>) {
+        receberOnda()
+    }
+})</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Uma edição só, sempre a mesma: o valor de <span class="tag">ATRASO</span>, no passo 01, antes de cada ronda da fila.</p>
+</div></section>
+
+<!-- ============ 8 · MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">8–14</td><td class="dim">Um por pessoa na fila; funciona também em V1</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">8–14</td><td class="dim">Sem cabo, para a fila se poder espalhar</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">2–3</td><td class="dim">Só para carregar o programa, partilhados</td></tr>
+      <tr><td>Portátil com MakeCode</td><td class="t">1–2</td><td class="dim">Um programa igual para todos os aparelhos</td></tr>
+      <tr><td>Cronómetro</td><td class="t">1</td><td class="dim">Telemóvel chega</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 9 · SE CORRER MAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>A onda salta pessoas</td><td class="dim">Grupo de rádio diferente nalgum aparelho — confirmar que todos têm o grupo 9</td></tr>
+      <tr><td>A onda volta para trás</td><td class="dim">Normal: o rádio é uma difusão, não um ponto a ponto. O sinalizador <span class="tag">ocupado</span> evita reenvio duplo, mas quem está a dois lugares de distância pode reagir por engano — espaçar mais a fila</td></tr>
+      <tr><td>Nunca chega ao fim</td><td class="dim">Alcance a menos de um metro é normal em espaços com muita gente; aumentar <span class="tag">radio.setTransmitPower</span> não incluído por omissão — testar antes da sessão</td></tr>
+      <tr><td>Todos acendem ao mesmo tempo</td><td class="dim">Estão demasiado próximos para o rádio distinguir a ordem; afastar a fila</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 10 · EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde<br>isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Onda em círculo</strong> — fechar a fila num círculo e ver quantas voltas dá até alguém mandar parar</li>
+    <li><strong>Duas ondas</strong> — arrancar de dois pontos da fila ao mesmo tempo e ver onde se cruzam</li>
+    <li><strong>Ruído</strong> — um participante no meio da fila finge que não recebeu, uma vez em cada três, e o grupo descobre como isso muda o tempo total</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 002</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+/* ---------- onda humana ---------- */
+const N = 8;
+const row = document.getElementById("waveRow");
+const nodes = [];
+for(let i=0;i<N;i++){
+  const d = document.createElement("div");
+  d.className = "wnode";
+  row.appendChild(d);
+  nodes.push(d);
+}
+
+const atraso = document.getElementById("atraso");
+const atrasoOut = document.getElementById("atrasoOut");
+const startBtn = document.getElementById("startBtn");
+const totalOut = document.getElementById("totalOut");
+
+function atualizarAtraso(){
+  atrasoOut.textContent = atraso.value + " ms por pessoa";
+}
+atraso.addEventListener("input", atualizarAtraso);
+atualizarAtraso();
+
+function correrOnda(){
+  startBtn.disabled = true;
+  nodes.forEach(n=>n.classList.remove("hit"));
+  const ms = +atraso.value;
+  const total = ms * (N - 1);
+  totalOut.textContent = "Tempo até ao fim da fila: " + (total/1000).toFixed(1).replace(".", ",") + " s";
+  nodes.forEach((n, i)=>{
+    setTimeout(()=>{
+      n.classList.add("hit");
+      if(i===N-1){ startBtn.disabled = false; }
+    }, i * ms);
+  });
+}
+startBtn.addEventListener("click", correrOnda);
+
+/* ---------- copiar ---------- */
+document.getElementById("copyBtn").addEventListener("click", async e=>{
+  const txt = document.getElementById("code").innerText;
+  try{
+    await navigator.clipboard.writeText(txt);
+    e.target.textContent = "Copiado";
+  }catch(err){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    e.target.textContent = "Copiado";
+  }
+  setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bússola — todos a apontar ao mesmo sítio · microbit.monco.io</title>
+<meta name="description" content="Atividade de 1h15: o magnetómetro dá um rumo, uma tolerância decide o que conta como alinhado, e o grupo tenta formar uma roseta de bússolas.">
+<meta property="og:title" content="Bússola — todos a apontar ao mesmo sítio">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Sem rádio. Só um magnetómetro, uma tolerância, e uma sala inteira a girar até encontrar o norte.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Bússola 005 — acentos e assinatura ===== */
+body{--accent:#E8B92A;--accent-2:#145C7A}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(56px,12vw,150px);font-weight:800;line-height:.86;margin-bottom:22px}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- dial rotativo (assinatura) --- */
+.dial-shell{border:2px solid var(--ink);margin-top:44px;background:var(--paper-2);display:grid;grid-template-columns:240px 1fr}
+.dial-wrap{padding:30px;display:flex;align-items:center;justify-content:center;border-right:2px solid var(--ink)}
+.dial{width:180px;height:180px;border-radius:50%;border:2px solid var(--ink);position:relative;background:var(--paper);touch-action:none;cursor:grab}
+.dial:active{cursor:grabbing}
+.dial-n{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.needle{position:absolute;left:50%;top:50%;width:4px;height:70px;background:var(--accent-2);transform-origin:50% 100%;margin-left:-2px;margin-top:-70px;border-radius:2px 2px 0 0;transition:background-color .15s;pointer-events:none}
+.needle.aligned{background:var(--lock)}
+.dial-center{position:absolute;left:50%;top:50%;width:10px;height:10px;background:var(--ink);border-radius:50%;margin-left:-5px;margin-top:-5px}
+.tick{position:absolute;left:50%;top:50%;width:0;height:90px;border-left:2px dashed var(--accent);transform-origin:50% 100%;margin-left:-1px;margin-top:-90px;opacity:.55;pointer-events:none}
+.dial-info{padding:24px 22px;display:flex;flex-direction:column;justify-content:center;gap:18px}
+.dial-info label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.dial-read{font-family:var(--mono);font-size:13px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.dial-read b{font-size:22px;font-weight:500;display:block}
+.verdict{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border:1px solid currentColor;display:inline-block}
+.verdict.yes{color:#1a7a3c}
+.verdict.no{color:var(--muted)}
+.dial-hint{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+@media (max-width:700px){
+  .dial-shell{grid-template-columns:1fr}
+  .dial-wrap{border-right:none;border-bottom:2px solid var(--ink)}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>005 · Bússola</span>
+  <span>1h15 · 6–10 micro:bit V2</span>
+</div></div>
+
+<!-- ============ 1 · ABERTURA ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 005 · Magnetómetro, tolerância, nível iniciação</div>
+  <h1>Bússola</h1>
+  <p class="lede">Sem rádio, sem equipa, sem ninguém a coordenar. Cada micro:bit só sabe uma coisa — para onde aponta — e mostra um visto quando essa direção está perto o suficiente do norte. O grupo inteiro gira até virar uma roseta de bússolas.</p>
+
+  <div class="dial-shell">
+    <div class="dial-wrap">
+      <div class="dial" id="dial">
+        <div class="dial-n">N</div>
+        <div class="tick" id="tickA"></div>
+        <div class="tick" id="tickB"></div>
+        <div class="needle" id="needle"></div>
+        <div class="dial-center"></div>
+      </div>
+    </div>
+    <div class="dial-info">
+      <div>
+        <label for="tolerancia">Tolerância — graus para cada lado</label>
+        <input type="range" id="tolerancia" min="2" max="60" value="15">
+      </div>
+      <div class="dial-read">
+        <span>Rumo <b class="mono" id="rumoOut">0°</b></span>
+        <span class="verdict yes" id="verdict">Alinhado</span>
+      </div>
+      <p class="dial-hint">Arrasta a agulha para girar. As duas linhas tracejadas marcam os limites da tolerância.</p>
+    </div>
+  </div>
+
+  <div class="hero-meta">
+    <span>Magnetómetro · 0°–359°</span>
+    <span>1 variável editável</span>
+    <span>Sem rádio</span>
+    <span>6 a 10 pessoas</span>
+  </div>
+</div></section>
+
+<!-- ============ 2 · O MECANISMO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Uma direção,<br>uma diferença</h2>
+  <p>Não há troca de informação entre aparelhos. Cada um calibra-se sozinho, lê o seu próprio rumo, e decide sozinho se está alinhado.</p>
+  <div class="cols">
+    <div class="card"><span class="n">Uma vez</span><h3>Calibra</h3><p>Ao ligar, o micro:bit pede para ser inclinado em todas as direções — é assim que aprende onde está o norte magnético a partir daquele ponto exato da sala.</p></div>
+    <div class="card"><span class="n">Sempre</span><h3>Lê o rumo</h3><p>Devolve um número de 0° a 359°, onde 0° é norte magnético e os valores sobem no sentido dos ponteiros do relógio.</p></div>
+    <div class="card"><span class="n">Comparação</span><h3>Está perto?</h3><p>Calcula a diferença entre o rumo atual e o alvo, e mostra um visto se essa diferença estiver dentro da tolerância.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 · CONCEITO CENTRAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Conceito</div>
+  <h2>0° e 359°<br>são vizinhos</h2>
+  <p>Numa régua normal, 358 e 2 estão longe um do outro. Numa bússola, 358° e 2° estão a só quatro graus de distância — o círculo dá a volta. Sem tratar esse caso, o programa pensaria que apontar quase para norte pelo lado errado é o mesmo que apontar para sul.</p>
+  <table>
+    <thead><tr><th>Rumo A</th><th>Rumo B</th><th>Diferença real</th></tr></thead>
+    <tbody>
+      <tr><td class="t">10°</td><td class="t">350°</td><td class="t">20°</td></tr>
+      <tr><td class="t">90°</td><td class="t">270°</td><td class="t">180°</td></tr>
+      <tr><td class="t">5°</td><td class="t">355°</td><td class="t">10°</td></tr>
+    </tbody>
+  </table>
+  <p class="dim" style="font-size:14px;margin-top:14px">É por isto que o código, mais abaixo, corrige a diferença sempre que ela passa de 180°.</p>
+</div></section>
+
+<!-- ============ 4 · SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 75 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>10 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Sem falar uns com os outros, conseguem ficar todos a apontar exatamente para o mesmo sítio?» Ainda sem código.</p></div></div>
+    <div class="tl-row"><div class="t">00:10<small>20 min</small></div><div><h3>Guião do dinamizador · o código já escrito</h3><p>Carregar o programa em todos os aparelhos, longe de mesas com metal. Seguir os passos do guião mais abaixo, incluindo a calibração de cada aparelho.</p></div></div>
+    <div class="tl-row pause"><div class="t">00:30<small>10 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">00:40<small>20 min</small></div><div><h3>Encontrar o norte</h3><p>Cada participante gira devagar no lugar até o seu micro:bit mostrar o visto. Quando todos estiverem alinhados, o grupo forma uma roseta — todos a apontar para o mesmo lado.</p></div></div>
+    <div class="tl-row"><div class="t">01:00<small>10 min</small></div><div><h3>Apertar a tolerância</h3><p>Baixar a tolerância para 5° e repetir. Alinhar fica visivelmente mais difícil — boa conversa sobre precisão.</p></div></div>
+    <div class="tl-row"><div class="t">01:10<small>5 min</small></div><div><h3>Fecho</h3><p>O que precisou de mais tempo — calibrar ou alinhar? Onde mais se usa uma bússola sem ninguém dar instruções?</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ 5 · PREPARAÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Longe<br>de metal</h2>
+  <p>Não há configuração por aparelho — todos correm o mesmo código. A preparação é do espaço: mesas de metal, portáteis e colunas de som desviam o magnetómetro.</p>
+  <table>
+    <thead><tr><th>Evitar perto do aparelho</th><th>Porquê</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Mesas ou cadeiras de metal</td><td class="dim">Distorcem o campo magnético local</td></tr>
+      <tr><td class="t">Portáteis e colunas</td><td class="dim">Ímanes internos, mesmo pequenos</td></tr>
+      <tr><td class="t">Outro micro:bit ligado por USB</td><td class="dim">O próprio cabo e a fonte de alimentação interferem</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 6 · CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. Cada equipa cola isto inteiro e edita só uma coisa, a seguir, passo a passo.</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">bussola.ts · magnetómetro + tolerância</span>
+    <button class="copy" id="copyBtn">Copiar código</button>
+  </div>
+  <pre id="code"><span class="c">// ===== BÚSSOLA — microbit.monco.io =====</span>
+<span class="c">// alinhar com o norte magnético, dentro de uma tolerância</span>
+
+<span class="k">let</span> ALVO = 0
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> TOLERANCIA = 15
+
+input.calibrate()
+
+basic.forever(<span class="k">function</span> () {
+    <span class="k">let</span> rumo = input.compassHeading()
+    <span class="k">let</span> diferenca = Math.abs(rumo - ALVO)
+    <span class="k">if</span> (diferenca &gt; 180) {
+        diferenca = 360 - diferenca
+    }
+    <span class="k">if</span> (diferenca &lt;= TOLERANCIA) {
+        basic.showIcon(IconNames.Yes)
+    } <span class="k">else</span> {
+        basic.showIcon(IconNames.No)
+    }
+    basic.pause(200)
+})</pre>
+</div></section>
+
+<!-- ============ 7 · GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Três passos. A calibração é a única parte que pede um gesto especial de cada aparelho, antes de começar a atividade.</p>
+
+  <div class="script">
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Calibrar</h3>
+        <p><span class="tag">input.calibrate()</span> corre uma vez, ao ligar. Pede para inclinar o aparelho até acender todos os LEDs à volta do ecrã — é assim que aprende onde é o norte a partir daquele ponto da sala. Repetir se o aparelho mudar de sítio.</p>
+        <pre class="mini">input.calibrate()</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>A tolerância</h3>
+        <p><span class="tag">TOLERANCIA</span> é o único valor que se muda — quantos graus para cada lado do norte ainda contam como alinhado. Um número pequeno exige mais precisão.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> TOLERANCIA = 15</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">03</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Corrigir a volta ao círculo</h3>
+        <p>A diferença entre dois rumos pode dar mais de 180° por engano, se não se corrigir — é o caso de 359° e 1°. A linha <span class="tag">se maior que 180, subtrai a 360</span> resolve isso, sempre.</p>
+        <pre class="mini"><span class="k">let</span> diferenca = Math.abs(rumo - ALVO)
+<span class="k">if</span> (diferenca &gt; 180) {
+    diferenca = 360 - diferenca
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Uma edição só, sempre a mesma: o valor de <span class="tag">TOLERANCIA</span>, no passo 02, entre a primeira ronda e a ronda mais apertada.</p>
+</div></section>
+
+<!-- ============ 8 · MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">6–10</td><td class="dim">Funciona também em V1, magnetómetro é o mesmo</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">6–10</td><td class="dim">Sem cabo, para poder girar livremente</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">2–3</td><td class="dim">Só para carregar o programa</td></tr>
+      <tr><td>Portátil com MakeCode</td><td class="t">1–2</td><td class="dim">Um programa igual para todos os aparelhos</td></tr>
+      <tr><td>Sala ampla, longe de metal</td><td class="t">1</td><td class="dim">Espaço para o grupo girar sem colidir</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 9 · SE CORRER MAL ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>Nunca mostra o visto</td><td class="dim">Recalibrar longe de mesas ou portáteis</td></tr>
+      <tr><td>Mostra o visto em direções diferentes</td><td class="dim">Interferência local — afastar de metal e recalibrar cada aparelho no sítio onde vai ser usado</td></tr>
+      <tr><td>Calibração não acaba</td><td class="dim">Rodar o aparelho mais devagar, nos três eixos, não só na horizontal</td></tr>
+      <tr><td>O visto pisca entre sim e não</td><td class="dim">A pessoa está mesmo no limite da tolerância — normal, subir ligeiramente o valor</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ 10 · EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde<br>isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Alvo diferente de norte</strong> — mudar <span class="tag">ALVO</span> para apontar a um objeto fixo da sala em vez do norte magnético</li>
+    <li><strong>Farol por rádio</strong> — um aparelho transmite o seu próprio rumo, e os outros alinham-se com ele em vez de um valor fixo</li>
+    <li><strong>Distância ao alvo</strong> — mostrar uma seta a apontar para que lado girar, em vez de só sim ou não</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 005</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+/* ---------- dial da bússola ---------- */
+const dial = document.getElementById("dial");
+const needle = document.getElementById("needle");
+const tickA = document.getElementById("tickA");
+const tickB = document.getElementById("tickB");
+const tolerancia = document.getElementById("tolerancia");
+const rumoOut = document.getElementById("rumoOut");
+const verdict = document.getElementById("verdict");
+
+let rumo = 0;
+let arrastando = false;
+
+function render(){
+  const t = +tolerancia.value;
+  needle.style.transform = "rotate(" + rumo + "deg)";
+  tickA.style.transform = "rotate(" + t + "deg)";
+  tickB.style.transform = "rotate(" + (360 - t) + "deg)";
+
+  let diferenca = Math.abs(rumo - 0);
+  if(diferenca > 180) diferenca = 360 - diferenca;
+  const ok = diferenca <= t;
+  needle.classList.toggle("aligned", ok);
+  rumoOut.textContent = Math.round(rumo) + "°";
+  verdict.textContent = ok ? "Alinhado" : "Gira mais";
+  verdict.className = "verdict " + (ok ? "yes" : "no");
+}
+
+function anguloDoEvento(e){
+  const rect = dial.getBoundingClientRect();
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  const dx = e.clientX - cx, dy = e.clientY - cy;
+  let deg = Math.atan2(dx, -dy) * 180 / Math.PI;
+  if(deg < 0) deg += 360;
+  return deg;
+}
+
+dial.addEventListener("pointerdown", e=>{
+  arrastando = true;
+  dial.setPointerCapture(e.pointerId);
+  rumo = anguloDoEvento(e);
+  render();
+});
+dial.addEventListener("pointermove", e=>{
+  if(!arrastando) return;
+  rumo = anguloDoEvento(e);
+  render();
+});
+dial.addEventListener("pointerup", ()=>{ arrastando = false; });
+dial.addEventListener("keydown", e=>{
+  if(e.key === "ArrowLeft"){ rumo = (rumo - 5 + 360) % 360; render(); }
+  if(e.key === "ArrowRight"){ rumo = (rumo + 5) % 360; render(); }
+});
+dial.setAttribute("tabindex", "0");
+tolerancia.addEventListener("input", render);
+render();
+
+/* ---------- copiar ---------- */
+document.getElementById("copyBtn").addEventListener("click", async e=>{
+  const txt = document.getElementById("code").innerText;
+  try{
+    await navigator.clipboard.writeText(txt);
+    e.target.textContent = "Copiado";
+  }catch(err){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    e.target.textContent = "Copiado";
+  }
+  setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+});
+</script>
+</body>
+</html>

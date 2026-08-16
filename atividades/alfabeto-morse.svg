@@ -1,0 +1,122 @@
+<svg viewBox="0 0 1400 940" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<rect x="0" y="0" width="1400" height="940" fill="#EAEAE4"/>
+<text x="40" y="62" font-size="46" font-weight="800" fill="#17171A" letter-spacing="-1">ALFABETO MORSE</text>
+<text x="40" y="92" font-size="17" fill="#7C7C74" letter-spacing="1.5">microbit.monco.io &#183; atividade 007 &#183; c&#243;digo morse</text>
+<line x1="40" y1="110" x2="1360" y2="110" stroke="#17171A" stroke-width="3"/>
+<rect x="40.0" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="90.8" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">A</text>
+<text x="90.8" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•–</text>
+<rect x="141.5" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="192.3" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">B</text>
+<text x="192.3" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–•••</text>
+<rect x="243.1" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="293.8" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">C</text>
+<text x="293.8" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–•–•</text>
+<rect x="344.6" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="395.4" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">D</text>
+<text x="395.4" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–••</text>
+<rect x="446.2" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="496.9" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">E</text>
+<text x="496.9" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•</text>
+<rect x="547.7" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="598.5" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">F</text>
+<text x="598.5" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">••–•</text>
+<rect x="649.2" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="700.0" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">G</text>
+<text x="700.0" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">––•</text>
+<rect x="750.8" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="801.5" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">H</text>
+<text x="801.5" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">••••</text>
+<rect x="852.3" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="903.1" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">I</text>
+<text x="903.1" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">••</text>
+<rect x="953.8" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1004.6" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">J</text>
+<text x="1004.6" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•–––</text>
+<rect x="1055.4" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1106.2" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">K</text>
+<text x="1106.2" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–•–</text>
+<rect x="1156.9" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1207.7" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">L</text>
+<text x="1207.7" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•–••</text>
+<rect x="1258.5" y="140.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1309.2" y="245.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">M</text>
+<text x="1309.2" y="328.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">––</text>
+<rect x="40.0" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="90.8" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">N</text>
+<text x="90.8" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–•</text>
+<rect x="141.5" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="192.3" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">O</text>
+<text x="192.3" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–––</text>
+<rect x="243.1" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="293.8" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">P</text>
+<text x="293.8" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•––•</text>
+<rect x="344.6" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="395.4" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">Q</text>
+<text x="395.4" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">––•–</text>
+<rect x="446.2" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="496.9" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">R</text>
+<text x="496.9" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•–•</text>
+<rect x="547.7" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="598.5" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">S</text>
+<text x="598.5" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•••</text>
+<rect x="649.2" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="700.0" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">T</text>
+<text x="700.0" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–</text>
+<rect x="750.8" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="801.5" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">U</text>
+<text x="801.5" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">••–</text>
+<rect x="852.3" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="903.1" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">V</text>
+<text x="903.1" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•••–</text>
+<rect x="953.8" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1004.6" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">W</text>
+<text x="1004.6" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•––</text>
+<rect x="1055.4" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1106.2" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">X</text>
+<text x="1106.2" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–••–</text>
+<rect x="1156.9" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1207.7" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">Y</text>
+<text x="1207.7" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–•––</text>
+<rect x="1258.5" y="370.0" width="101.5" height="230.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1309.2" y="475.8" font-size="40" font-weight="800" fill="#17171A" text-anchor="middle">Z</text>
+<text x="1309.2" y="558.6" font-size="26" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">––••</text>
+<line x1="40" y1="630" x2="1360" y2="630" stroke="#17171A" stroke-width="2"/>
+<text x="40" y="662" font-size="15" fill="#7C7C74" letter-spacing="1.5">N&#218;MEROS</text>
+<rect x="40.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="106.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">0</text>
+<text x="106.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–––––</text>
+<rect x="172.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="238.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">1</text>
+<text x="238.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•––––</text>
+<rect x="304.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="370.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">2</text>
+<text x="370.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">••–––</text>
+<rect x="436.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="502.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">3</text>
+<text x="502.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•••––</text>
+<rect x="568.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="634.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">4</text>
+<text x="634.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">••••–</text>
+<rect x="700.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="766.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">5</text>
+<text x="766.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">•••••</text>
+<rect x="832.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="898.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">6</text>
+<text x="898.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–••••</text>
+<rect x="964.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1030.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">7</text>
+<text x="1030.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">––•••</text>
+<rect x="1096.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1162.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">8</text>
+<text x="1162.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">–––••</text>
+<rect x="1228.0" y="680.0" width="132.0" height="160.0" fill="none" stroke="#C9C9C0" stroke-width="1.5"/>
+<text x="1294.0" y="753.6" font-size="36" font-weight="800" fill="#17171A" text-anchor="middle">9</text>
+<text x="1294.0" y="811.2" font-size="22" font-weight="700" fill="#C4291B" text-anchor="middle" letter-spacing="2" font-family="Consolas, Menlo, monospace">––––•</text>
+<line x1="40" y1="866" x2="1360" y2="866" stroke="#17171A" stroke-width="2"/>
+<text x="40" y="904" font-size="20" font-weight="700" fill="#C4291B">&#8226;</text>
+<text x="62" y="904" font-size="17" fill="#17171A">ponto — som curto, botão A</text>
+<text x="420" y="904" font-size="20" font-weight="700" fill="#C4291B">&#8211;</text>
+<text x="445" y="904" font-size="17" fill="#17171A">linha — som longo, botão B</text>
+<text x="820" y="904" font-size="17" fill="#7C7C74">pausa entre letras = 3&#215; a duração de um ponto</text>
+</svg>

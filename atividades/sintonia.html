@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sintonia — acordes em rede · microbit.monco.io</title>
+<meta name="description" content="Atividade de 2h30 com dez micro:bits: um acorde que só existe quando três pessoas se aproximam.">
+<meta property="og:title" content="Sintonia — acordes em rede">
+<meta name="author" content="David Marques">
+<meta property="og:description" content="Dez micro:bits, duas notas cada. O acorde aparece no espaço entre as pessoas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+/* ===== Sintonia 001 — estilos próprios da atividade ===== */
+body{--accent:#E8442A;--accent-2:#1B39C4}
+body.lock-do{background:#F3D9D2}
+body.lock-re{background:#D6DBF2}
+
+.hero{padding-top:56px}
+.hero h1{font-size:clamp(64px,15vw,178px);font-weight:800;line-height:.82;margin-bottom:22px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero h1 i{font-style:normal;color:var(--accent-2)}
+.hero-meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px;margin-top:30px}
+
+/* --- banco de notas (assinatura) --- */
+.bench-shell{position:relative;margin-top:44px}
+.bench-status{border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:13px;letter-spacing:.06em}
+.bench-status b{font-weight:500}
+#statusMain{text-transform:uppercase;letter-spacing:.14em}
+.bench-status.hit{background:var(--lock);color:var(--ink)}
+.bench{position:relative;border:2px solid var(--ink);border-top:none;background:var(--paper-2)}
+.row{display:grid;grid-template-columns:118px 1fr;align-items:stretch}
+.row + .row{border-top:2px solid var(--ink)}
+.row-label{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);padding:16px 0}
+.row-label b{font-family:var(--disp);font-size:19px;letter-spacing:.02em;font-weight:700}
+.row-a .row-label{background:var(--accent)}
+.row-b .row-label{background:var(--accent-2)}
+.chips{display:grid;grid-template-columns:repeat(9,1fr);gap:0}
+.chip{appearance:none;border:none;border-left:1px solid var(--rule);background:transparent;cursor:pointer;padding:20px 6px 16px;font-family:var(--disp);font-size:clamp(13px,1.7vw,19px);font-weight:700;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:7px;transition:background-color .12s,color .12s}
+.chip:first-child{border-left:none}
+.chip .hz{font-family:var(--mono);font-size:10.5px;font-weight:400;color:var(--muted);letter-spacing:.02em}
+.chip:hover{background:rgba(0,0,0,.055)}
+.chip:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
+.row-a .chip.on{background:var(--accent);color:#fff}
+.row-b .chip.on{background:var(--accent-2);color:#fff}
+.chip.on .hz{color:rgba(255,255,255,.75)}
+.chip.ring{background:var(--lock)!important;color:var(--ink)!important}
+.chip.ring .hz{color:rgba(0,0,0,.6)!important}
+@keyframes buzz{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.bench.bad{animation:buzz .22s ease 2}
+#lines{position:absolute;inset:0;pointer-events:none;z-index:3}
+.bench-hint{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:12px;letter-spacing:.03em}
+
+/* --- simulador RSSI --- */
+.rssi{border:2px solid var(--ink);margin-top:30px;background:var(--paper-2)}
+.rssi-stage{position:relative;height:130px;overflow:hidden;border-bottom:2px solid var(--ink)}
+.node{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;margin-left:-22px;border:2px solid var(--ink);border-radius:50%;background:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;transition:left .12s linear}
+#nodeA{left:60px;background:var(--accent);color:#fff;border-color:var(--accent)}
+#nodeB{background:var(--accent-2);color:#fff;border-color:var(--accent-2)}
+#link{position:absolute;top:50%;height:3px;margin-top:-1.5px;background:var(--ink);opacity:.22;transition:left .12s,width .12s}
+#link.ok{opacity:1;background:var(--lock);height:6px;margin-top:-3px}
+.rssi-ctl{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center;padding:18px 20px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.readout{font-family:var(--mono);font-size:13px;text-align:right;line-height:1.7;white-space:nowrap}
+.readout b{font-size:22px;font-weight:500;display:block}
+.verdict{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;display:inline-block;border:1px solid currentColor}
+.verdict.yes{color:#1a7a3c}
+.verdict.no{color:var(--accent)}
+
+@media (max-width:760px){
+  .row{grid-template-columns:56px 1fr}
+  .chips{grid-template-columns:repeat(3,1fr)}
+  .chip{border-top:1px solid var(--rule)}
+  .chips .chip:nth-child(-n+3){border-top:none}
+  .chips .chip:nth-child(3n+1){border-left:none}
+  .rssi-ctl{grid-template-columns:1fr}
+  .readout{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">← microbit.monco.io</a>
+  <span>001 · Sintonia · 18 notas</span>
+  <span>2h30 · 10 micro:bit V2</span>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<section class="first hero"><div class="wrap">
+  <div class="eyebrow">Atividade 001 · Som, rádio e sistemas distribuídos</div>
+  <h1>SIN<em>T</em>ON<i>I</i>A</h1>
+  <p class="lede">Dez micro:bits. Cada um sabe tocar duas notas e mais nada. O acorde não vive dentro de nenhum deles — aparece no espaço entre três pessoas que se aproximam ao mesmo tempo.</p>
+
+  <div class="bench-shell">
+    <div class="bench-status" id="status">
+      <span id="statusMain">Escolhe três notas</span>
+      <b id="statusSub">Nenhuma nota selecionada</b>
+    </div>
+    <div class="bench" id="bench">
+      <svg id="lines"></svg>
+      <div class="row row-a">
+        <div class="row-label">Lista A <b>Dó Maior</b></div>
+        <div class="chips" data-list="A"></div>
+      </div>
+      <div class="row row-b">
+        <div class="row-label">Lista B <b>Ré menor</b></div>
+        <div class="chips" data-list="B"></div>
+      </div>
+    </div>
+    <div class="bench-hint">Clica para ouvir. Três notas que formem a tríade — em qualquer oitava — entram em sintonia.</div>
+  </div>
+
+  <div class="hero-meta">
+    <span>18 notas · 2 oitavas de amplitude</span>
+    <span>2 acordes disjuntos</span>
+    <span>Rádio grupo 7 · potência 2</span>
+    <span>Limiar −55 dBm</span>
+  </div>
+</div></section>
+
+<!-- ============ COMO FUNCIONA ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">O mecanismo</div>
+  <h2>Três decisões locais,<br>um resultado partilhado</h2>
+  <p>Nenhum micro:bit tem uma visão do conjunto. Cada um só sabe o que ouve à sua volta — e é dessa soma de decisões isoladas que o acorde emerge.</p>
+  <div class="cols">
+    <div class="card"><span class="n">Botão A ou B</span><h3>Assume uma nota</h3><p>Cada aparelho guarda duas notas: uma da Lista A, outra da Lista B. Ao carregar, toca a nota e passa a anunciá-la por rádio a cada meio segundo.</p></div>
+    <div class="card"><span class="n">Rádio + RSSI</span><h3>Ouve quem está perto</h3><p>Recebe as notas dos outros, mas só guarda as que chegam com sinal forte. As distantes são descartadas, mesmo tendo chegado.</p></div>
+    <div class="card"><span class="n">Tríade completa</span><h3>Dispara o acorde</h3><p>Quando as três classes de nota do seu acorde estão presentes, envia o sinal <span class="tag">TOCA</span> e os três soam em conjunto.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ OITAVAS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Amplitude</div>
+  <h2>A mesma nota,<br>alturas diferentes</h2>
+  <p>Cada lista passou de 3 para 9 notas, distribuídas por três registos. O <strong>DÓ3</strong> a 131 Hz e o <strong>DÓ5</strong> a 523 Hz são frequências completamente diferentes — mas são a mesma nota, e valem o mesmo para o acorde.</p>
+  <p>O programa compara <strong>classes de nota</strong>, não frequências: corta o algarismo do fim e fica com <span class="tag">DO</span>, <span class="tag">MI</span>, <span class="tag">SOL</span>. Um DÓ3 grave, um MI4 e um SOL5 agudo formam uma tríade tão válida como três notas coladas — e soam bastante melhor, porque ficam espalhadas em vez de amontoadas.</p>
+
+  <table>
+    <thead><tr><th>Registo</th><th><span class="tag a">Lista A</span> Dó Maior</th><th><span class="tag b">Lista B</span> Ré menor</th></tr></thead>
+    <tbody>
+      <tr><td class="t">3 · grave</td><td class="t">DO3 131 · MI3 165 · SOL3 196</td><td class="t">RE3 147 · FA3 175 · LA3 220</td></tr>
+      <tr><td class="t">4 · médio</td><td class="t">DO4 262 · MI4 330 · SOL4 392</td><td class="t">RE4 294 · FA4 349 · LA4 440</td></tr>
+      <tr><td class="t">5 · agudo</td><td class="t">DO5 523 · MI5 659 · SOL5 784</td><td class="t">RE5 587 · FA5 698 · LA5 880</td></tr>
+    </tbody>
+  </table>
+  <p class="dim" style="font-size:14px;margin-top:14px">Valores em hertz, temperamento igual com LÁ4 = 440 Hz. As duas listas não partilham nenhuma nota, por isso nunca há dúvida sobre a que acorde pertence uma emissão.</p>
+</div></section>
+
+<!-- ============ RSSI ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Proximidade</div>
+  <h2>O que é o filtro RSSI</h2>
+  <p>O rádio do micro:bit atravessa a sala inteira. Sem filtro, os dez aparelhos ouviam-se todos e os acordes formavam-se sozinhos, sem ninguém dar um passo.</p>
+  <p>Cada pacote recebido traz a sua própria <strong>força de sinal</strong>, em dBm — sempre um número negativo, em que <strong>menos negativo significa mais perto</strong>. O programa lê esse valor e decide se vale a pena guardar a nota. A mensagem chega na mesma; é o código que a deita fora.</p>
+
+  <div class="rssi">
+    <div class="rssi-stage">
+      <div id="link"></div>
+      <div class="node" id="nodeA">A</div>
+      <div class="node" id="nodeB">B</div>
+    </div>
+    <div class="rssi-ctl">
+      <div>
+        <label for="dist" class="dim" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase">Distância entre os dois micro:bits</label>
+        <input type="range" id="dist" min="0" max="100" value="18">
+      </div>
+      <div class="readout">
+        <span class="dim" id="distOut">1,8 m</span>
+        <b id="rssiOut">−42 dBm</b>
+        <span class="verdict yes" id="verdict">Nota aceite</span>
+      </div>
+    </div>
+  </div>
+  <p class="dim" style="font-size:14px;margin-top:14px">Simulação aproximada. Na sala real, corpos, paredes e a orientação da antena alteram os valores — daí a calibração fazer parte da atividade.</p>
+
+  <ul class="clean">
+    <li><strong>−40 dBm</strong> — encostados, menos de um metro</li>
+    <li><strong>−55 dBm</strong> — dois a três metros. É o limiar usado por omissão</li>
+    <li><strong>−70 dBm</strong> — cinco a oito metros, do outro lado da sala</li>
+    <li><strong>−90 dBm</strong> — no limite do alcance, prestes a perder-se</li>
+  </ul>
+</div></section>
+
+<!-- ============ SESSÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa · 150 minutos</div>
+  <h2>A sessão</h2>
+  <div class="tl">
+    <div class="tl-row"><div class="t">00:00<small>15 min</small></div><div><h3>Acolhimento e pergunta-motriz</h3><p>«Um acorde pode viver em três máquinas ao mesmo tempo?» Três micro:bits já programados, aproximam-se, soa o acorde. Não se explica nada — só se provoca.</p></div></div>
+    <div class="tl-row"><div class="t">00:15<small>15 min</small></div><div><h3>O som e o acorde</h3><p>Frequência e altura. Ouvir DÓ, MI e SOL isoladas e depois juntas, uma pessoa por nota. Comparar com Ré menor: o que muda na sensação?</p></div></div>
+    <div class="tl-row"><div class="t">00:30<small>15 min</small></div><div><h3>Como é que eles se ouvem</h3><p>Grupo de rádio, enviar texto, ao receber texto. Experiência: baixar a potência para 2 e verificar que a mensagem deixa de atravessar a sala. Descobrir o RSSI antes de o explicar.</p></div></div>
+    <div class="tl-row"><div class="t">00:45<small>20 min</small></div><div><h3>Guião do dinamizador · o código já escrito</h3><p>Não se escreve nada do zero. Em conjunto, ligar um micro:bit ao computador, seguir os cinco passos do guião mais abaixo nesta página e perceber o que já vem feito. Cada equipa muda só a sua nota, e carrega o programa em todos os aparelhos.</p></div></div>
+    <div class="tl-row pause"><div class="t">01:05<small>10 min</small></div><div><h3>Pausa</h3><p></p></div></div>
+    <div class="tl-row"><div class="t">01:15<small>15 min</small></div><div><h3>Calibração em conjunto</h3><p>Duas pessoas afastam-se devagar enquanto o grupo olha para o simulador de RSSI, mais atrás nesta página. Encontrar na prática a que distância a nota deixa de ser aceite, e ajustar o limiar se for preciso.</p></div></div>
+    <div class="tl-row"><div class="t">01:30<small>35 min</small></div><div><h3>Caça ao Acorde</h3><p>Rondas na arena: aquecimento livre, ronda Dó Maior cronometrada, ronda em silêncio total, e os dois acordes ao mesmo tempo em zonas separadas. O bloco mais longo da sessão — o objetivo é andar, não programar.</p></div></div>
+    <div class="tl-row"><div class="t">02:05<small>15 min</small></div><div><h3>Composição em movimento</h3><p>Já sem cronómetro. O grupo tenta compor uma sequência — dois ou três acordes seguidos, decididos antes e feitos acontecer só com posição no espaço, sem ninguém dizer em voz alta o que fazer. Registar em vídeo, se der.</p></div></div>
+    <div class="tl-row"><div class="t">02:20<small>10 min</small></div><div><h3>Fecho</h3><p>Onde estava o acorde? Nenhum aparelho sabia que o estava a tocar — então quem sabia? Que outros sistemas funcionam assim?</p></div></div>
+  </div>
+</div></section>
+
+<!-- ============ DISTRIBUIÇÃO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Preparação</div>
+  <h2>Distribuição pelos<br>dez aparelhos</h2>
+  <p>Combinações e registos diferentes em cada micro:bit. Nenhuma equipa consegue fechar um acorde sozinha, e a mistura de oitavas garante que dois trios distintos nunca soam igual.</p>
+  <table>
+    <thead><tr><th>#</th><th><span class="tag a">Botão A</span></th><th><span class="tag b">Botão B</span></th><th>Carácter</th></tr></thead>
+    <tbody>
+      <tr><td class="t">01</td><td class="t">DO3 · 131</td><td class="t">RE4 · 294</td><td class="dim">baixo / médio</td></tr>
+      <tr><td class="t">02</td><td class="t">MI4 · 330</td><td class="t">FA3 · 175</td><td class="dim">médio / grave</td></tr>
+      <tr><td class="t">03</td><td class="t">SOL4 · 392</td><td class="t">LA5 · 880</td><td class="dim">médio / agudo</td></tr>
+      <tr><td class="t">04</td><td class="t">DO4 · 262</td><td class="t">FA4 · 349</td><td class="dim">médio / médio</td></tr>
+      <tr><td class="t">05</td><td class="t">MI3 · 165</td><td class="t">LA3 · 220</td><td class="dim">grave / grave</td></tr>
+      <tr><td class="t">06</td><td class="t">SOL3 · 196</td><td class="t">RE3 · 147</td><td class="dim">grave / grave</td></tr>
+      <tr><td class="t">07</td><td class="t">DO5 · 523</td><td class="t">LA4 · 440</td><td class="dim">agudo / médio</td></tr>
+      <tr><td class="t">08</td><td class="t">MI5 · 659</td><td class="t">RE5 · 587</td><td class="dim">agudo / agudo</td></tr>
+      <tr><td class="t">09</td><td class="t">SOL5 · 784</td><td class="t">FA5 · 698</td><td class="dim">agudo / agudo</td></tr>
+      <tr><td class="t">10</td><td class="t">DO4 · 262</td><td class="t">LA4 · 440</td><td class="dim">curinga</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ CÓDIGO ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Programa</div>
+  <h2>Código MakeCode</h2>
+  <p>No MakeCode, abrir o separador <strong>{ } JavaScript</strong>, colar, e voltar a <strong>Blocos</strong>. O código está escrito só com construções que o editor sabe representar, por isso aparece tudo em blocos, pronto a ser explorado e alterado. Cada equipa cola isto inteiro e edita só duas coisas — a seguir, passo a passo.</p>
+  <div class="codebar">
+    <span class="dim" style="font-family:var(--mono);font-size:12px">sintonia.ts · 18 notas · classes de nota</span>
+    <button class="copy" id="copyBtn">Copiar código</button>
+  </div>
+  <pre id="code"><span class="c">// ===== SINTONIA — microbit.monco.io =====</span>
+<span class="c">// 18 notas, 3 registos, comparação por classe de nota</span>
+
+<span class="k">let</span> NOMES = [<span class="s">"DO3"</span>, <span class="s">"MI3"</span>, <span class="s">"SOL3"</span>, <span class="s">"DO4"</span>, <span class="s">"MI4"</span>, <span class="s">"SOL4"</span>, <span class="s">"DO5"</span>, <span class="s">"MI5"</span>, <span class="s">"SOL5"</span>,
+             <span class="s">"RE3"</span>, <span class="s">"FA3"</span>, <span class="s">"LA3"</span>, <span class="s">"RE4"</span>, <span class="s">"FA4"</span>, <span class="s">"LA4"</span>, <span class="s">"RE5"</span>, <span class="s">"FA5"</span>, <span class="s">"LA5"</span>]
+<span class="k">let</span> FREQS = [131, 165, 196, 262, 330, 392, 523, 659, 784,
+             147, 175, 220, 294, 349, 440, 587, 698, 880]
+
+<span class="k">let</span> CLASSES_A = [<span class="s">"DO"</span>, <span class="s">"MI"</span>, <span class="s">"SOL"</span>]   <span class="c">// Acorde 1 — Dó Maior</span>
+<span class="k">let</span> CLASSES_B = [<span class="s">"RE"</span>, <span class="s">"FA"</span>, <span class="s">"LA"</span>]    <span class="c">// Acorde 2 — Ré menor</span>
+
+<span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> notaA = <span class="s">"DO3"</span>
+<span class="k">let</span> notaB = <span class="s">"RE4"</span>
+
+<span class="k">let</span> PROXIMIDADE = -55
+<span class="k">let</span> minhaNota = <span class="s">""</span>
+<span class="k">let</span> ouvidas: string[] = []
+<span class="k">let</span> emSintonia = <span class="k">false</span>
+
+<span class="c">// "SOL4" -&gt; "SOL"   (tira o algarismo do registo)</span>
+<span class="k">function</span> classeDe(nota: string) {
+    <span class="k">return</span> nota.substr(0, nota.length - 1)
+}
+
+<span class="k">function</span> freqDe(nota: string) {
+    <span class="k">return</span> FREQS[NOMES.indexOf(nota)]
+}
+
+<span class="k">function</span> tocarNota() {
+    basic.showIcon(IconNames.Heart)
+    music.playTone(freqDe(minhaNota), music.beat(BeatFraction.Double))
+    basic.showString(minhaNota)
+}
+
+<span class="k">function</span> assumirNota() {
+    ouvidas = []
+    emSintonia = <span class="k">false</span>
+    basic.showString(minhaNota)
+    music.playTone(freqDe(minhaNota), music.beat(BeatFraction.Half))
+}
+
+<span class="k">function</span> verificarAcorde() {
+    <span class="k">let</span> minhaClasse = classeDe(minhaNota)
+    <span class="k">let</span> oMeuAcorde = CLASSES_B
+    <span class="k">if</span> (CLASSES_A.indexOf(minhaClasse) &gt;= 0) {
+        oMeuAcorde = CLASSES_A
+    }
+    <span class="k">let</span> classesOuvidas: string[] = []
+    <span class="k">for</span> (<span class="k">let</span> n <span class="k">of</span> ouvidas) {
+        classesOuvidas.push(classeDe(n))
+    }
+    <span class="k">let</span> completo = <span class="k">true</span>
+    <span class="k">for</span> (<span class="k">let</span> c <span class="k">of</span> oMeuAcorde) {
+        <span class="k">if</span> (c != minhaClasse &amp;&amp; classesOuvidas.indexOf(c) &lt; 0) {
+            completo = <span class="k">false</span>
+        }
+    }
+    <span class="k">if</span> (completo &amp;&amp; !emSintonia) {
+        emSintonia = <span class="k">true</span>
+        radio.sendString(<span class="s">"TOCA"</span>)
+        tocarNota()
+    }
+}
+
+input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    minhaNota = notaA
+    assumirNota()
+})
+
+input.onButtonPressed(Button.B, <span class="k">function</span> () {
+    minhaNota = notaB
+    assumirNota()
+})
+
+input.onGesture(Gesture.Shake, <span class="k">function</span> () {
+    minhaNota = <span class="s">""</span>
+    ouvidas = []
+    emSintonia = <span class="k">false</span>
+    basic.showIcon(IconNames.Asleep)
+})
+
+radio.onReceivedString(<span class="k">function</span> (receivedString) {
+    <span class="k">if</span> (minhaNota != <span class="s">""</span> &amp;&amp; radio.receivedPacket(RadioPacketProperty.SignalStrength) &gt;= PROXIMIDADE) {
+        <span class="k">if</span> (receivedString == <span class="s">"TOCA"</span>) {
+            <span class="k">if</span> (ouvidas.length &gt; 0) {
+                tocarNota()
+            }
+        } <span class="k">else</span> {
+            <span class="k">if</span> (receivedString != minhaNota &amp;&amp; ouvidas.indexOf(receivedString) &lt; 0) {
+                ouvidas.push(receivedString)
+            }
+            verificarAcorde()
+        }
+    }
+})
+
+radio.setGroup(7)
+radio.setTransmitPower(2)
+basic.showIcon(IconNames.Asleep)
+
+basic.forever(<span class="k">function</span> () {
+    <span class="k">if</span> (minhaNota != <span class="s">""</span>) {
+        radio.sendString(minhaNota)
+    }
+    basic.pause(500)
+})
+
+basic.forever(<span class="k">function</span> () {
+    basic.pause(4000)
+    <span class="k">if</span> (!emSintonia) {
+        ouvidas = []
+    }
+})</pre>
+</div></section>
+
+<!-- ============ GUIÃO DO DINAMIZADOR ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Guião do dinamizador</div>
+  <h2>O código,<br>passo a passo</h2>
+  <p>Para ler antes da sessão e apontar durante ela. O programa de cima já vai completo — nenhuma equipa parte de uma folha em branco. O trabalho delas é perceber cinco decisões que ele toma, e mexer só nas duas que lhes pertencem. Tudo o resto é ler em voz alta e mostrar no ecrã do computador.</p>
+
+  <div class="script">
+
+    <div class="step">
+      <div class="step-n">01</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>As duas listas de notas</h3>
+        <p>Duas listas paralelas. Na posição 0 de <span class="tag">NOMES</span> está <span class="tag">DO3</span>; na posição 0 de <span class="tag">FREQS</span> está <span class="tag">131</span> — a frequência em hertz do DO3. É o dicionário completo: todas as notas que existem no sistema inteiro, com nome e som. Nenhum micro:bit inventa uma nota que não esteja aqui.</p>
+        <pre class="mini"><span class="k">let</span> NOMES = [<span class="s">"DO3"</span>, <span class="s">"MI3"</span>, <span class="s">"SOL3"</span>, <span class="s">"DO4"</span> … <span class="s">"LA5"</span>]
+<span class="k">let</span> FREQS = [131, 165, 196, 262 … 880]</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">02</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>A tua nota</h3>
+        <p>É aqui que cada equipa entra. <span class="tag">notaA</span> e <span class="tag">notaB</span> são as duas notas que este micro:bit — só este — sabe tocar. Vêm da tabela de distribuição, mais atrás nesta página: uma linha por aparelho. Mudar estas duas linhas é a única edição obrigatória antes de carregar o programa.</p>
+        <pre class="mini"><span class="c">// &gt;&gt;&gt; A EQUIPA ESCOLHE AQUI &lt;&lt;&lt;</span>
+<span class="k">let</span> notaA = <span class="s">"DO3"</span>
+<span class="k">let</span> notaB = <span class="s">"RE4"</span></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">03</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Tocar e avisar a sala inteira</h3>
+        <p>Carregar no botão A ou B escolhe a nota e toca-a de imediato. A partir daí, um ciclo em fundo repete-se sozinho: a cada meio segundo, o micro:bit anuncia a sua nota por rádio, quer alguém esteja a ouvir quer não. É esse anúncio contínuo que os outros nove aparelhos vão apanhar.</p>
+        <pre class="mini">input.onButtonPressed(Button.A, <span class="k">function</span> () {
+    minhaNota = notaA
+    assumirNota()
+})
+
+basic.forever(<span class="k">function</span> () {
+    <span class="k">if</span> (minhaNota != <span class="s">""</span>) { radio.sendString(minhaNota) }
+    basic.pause(500)
+})</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">04</div>
+      <div>
+        <span class="badge edit">Edita aqui</span>
+        <h3>Só aceitar quem está perto</h3>
+        <p>O rádio ouve a sala inteira, mas cada pacote traz a força do sinal com que chegou — sempre negativa, tanto mais próxima de zero quanto mais perto está quem enviou. <span class="tag">PROXIMIDADE</span> é o limiar: abaixo dele, a nota é ignorada, mesmo tendo chegado. É o único valor que se recalibra em sala, depois de testar a distância real com o simulador de RSSI, mais atrás nesta página.</p>
+        <pre class="mini"><span class="k">let</span> PROXIMIDADE = -55
+<span class="c">// ...</span>
+<span class="k">if</span> (radio.receivedPacket(RadioPacketProperty.SignalStrength) &gt;= PROXIMIDADE) { … }</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">05</div>
+      <div>
+        <span class="badge fixed">Já vem assim</span>
+        <h3>Contar até três</h3>
+        <p><span class="tag">classeDe()</span> tira o algarismo do fim — SOL4 vira SOL — para comparar notas por classe, não por oitava. <span class="tag">verificarAcorde()</span> percorre as três classes do acorde da equipa e verifica se já ouviu todas. Quando sim, e só uma vez, envia <span class="tag">TOCA</span> por rádio e toca a própria nota. Não há um micro:bit maestro: os dez fazem esta conta ao mesmo tempo, cada um só com a informação que tem.</p>
+        <pre class="mini"><span class="k">function</span> classeDe(nota: string) {
+    <span class="k">return</span> nota.substr(0, nota.length - 1)
+}
+<span class="c">// ...</span>
+<span class="k">if</span> (completo &amp;&amp; !emSintonia) {
+    radio.sendString(<span class="s">"TOCA"</span>)
+    tocarNota()
+}</pre>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dim" style="font-size:14px;margin-top:6px">Duas edições por equipa, sempre as mesmas: a nota, no passo 02, antes de carregar o programa; o limiar, no passo 04, depois de testar a distância na sala. O resto do código não se mexe.</p>
+</div></section>
+
+<!-- ============ MATERIAIS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Logística</div>
+  <h2>Materiais</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Qtd</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>micro:bit V2</td><td class="t">10</td><td class="dim">Altifalante integrado — essencial para o acorde</td></tr>
+      <tr><td>Suporte de pilhas + AAA</td><td class="t">10</td><td class="dim">Sem cabo durante o jogo, é preciso andar</td></tr>
+      <tr><td>Cabos micro-USB</td><td class="t">10</td><td class="dim">Só para carregar o programa</td></tr>
+      <tr><td>Portáteis com MakeCode</td><td class="t">5</td><td class="dim">Um por equipa de dois</td></tr>
+      <tr><td>Autocolantes de cor</td><td class="t">30</td><td class="dim">Uma cor por classe de nota</td></tr>
+      <tr><td>Fita de marcação</td><td class="t">1</td><td class="dim">Delimitar a arena no chão</td></tr>
+      <tr><td>Cartões com a tabela</td><td class="t">10</td><td class="dim">Um por aparelho, com as duas notas</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ PROBLEMAS ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se correr mal</div>
+  <h2>Resolução de problemas</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td>Toca sempre, mesmo longe</td><td class="dim">Subir o limiar para −45 dBm e baixar a potência de emissão para 1 ou 0</td></tr>
+      <tr><td>Nunca toca</td><td class="dim">Confirmar que todos os aparelhos têm o grupo de rádio 7</td></tr>
+      <tr><td>Toca uma vez e nunca mais</td><td class="dim">Agitar o micro:bit para fazer reset</td></tr>
+      <tr><td>Notas graves quase inaudíveis</td><td class="dim">O altifalante do V2 é pequeno; usar os registos 4 e 5 se a sala for ruidosa</td></tr>
+      <tr><td>Acordes a formar-se sozinhos</td><td class="dim">Aumentar a arena ou apertar o limiar</td></tr>
+      <tr><td>Som cortado ou arrastado</td><td class="dim">Reduzir a duração de <span class="tag">playTone</span> para um tempo</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- ============ EXTENSÕES ============ -->
+<section><div class="wrap">
+  <div class="eyebrow">Se sobrar tempo</div>
+  <h2>Para onde isto pode ir</h2>
+  <ul class="clean">
+    <li><strong>Escolha dinâmica</strong> — A+B percorre a lista das 9 notas, A confirma. Cada participante escolhe mesmo o seu registo, em vez de o receber</li>
+    <li><strong>Sétimas</strong> — juntar SI e DO ao conjunto e exigir quatro pessoas coordenadas em vez de três</li>
+    <li><strong>Regra de amplitude</strong> — só validar a tríade se as três notas estiverem em registos diferentes. Obriga a pensar o acorde como espaço, não como lista</li>
+    <li><strong>Monitor central</strong> — um 11.º micro:bit ligado por USB regista em série todos os acordes formados e desenha-os em tempo real</li>
+    <li><strong>Saída MIDI</strong> — encaminhar as notas por série para um sintetizador ou uma DAW</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Continuar</div>
+  <h2>Mais atividades</h2>
+  <p>O catálogo tem os planos completos de todas as sessões, com o mesmo nível de detalhe.</p>
+  <p><a class="btn" href="../">Ver o catálogo</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><a href="../">microbit.monco.io</a> · atividade 001</span>
+  <span>Conteúdo de David Marques</span>
+  <span>Um projeto <a href="https://monco.io">Monco</a></span>
+</div></footer>
+
+<script>
+const NOTAS = {
+  A:[["DO3",131],["MI3",165],["SOL3",196],["DO4",262],["MI4",330],["SOL4",392],["DO5",523],["MI5",659],["SOL5",784]],
+  B:[["RE3",147],["FA3",175],["LA3",220],["RE4",294],["FA4",349],["LA4",440],["RE5",587],["FA5",698],["LA5",880]]
+};
+const CLASSES = {A:["DO","MI","SOL"], B:["RE","FA","LA"]};
+const classeDe = n => n.replace(/\d+$/,"");
+
+/* ---------- áudio ---------- */
+let ac = null;
+function ctx(){ if(!ac) ac = new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); return ac; }
+function tocar(hz, dur=0.85, delay=0, gain=0.22){
+  const c = ctx(), t = c.currentTime + delay;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = "triangle"; o.frequency.value = hz;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+
+/* ---------- bench ---------- */
+const bench = document.getElementById("bench");
+const svg = document.getElementById("lines");
+const statusEl = document.getElementById("status");
+const statusMain = document.getElementById("statusMain");
+const statusSub = document.getElementById("statusSub");
+let sel = [];
+
+document.querySelectorAll(".chips").forEach(row=>{
+  const lista = row.dataset.list;
+  NOTAS[lista].forEach(([nome,hz])=>{
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button";
+    b.dataset.nota = nome; b.dataset.hz = hz; b.dataset.lista = lista;
+    b.setAttribute("aria-pressed","false");
+    b.innerHTML = nome + '<span class="hz">' + hz + ' Hz</span>';
+    b.addEventListener("click", ()=>escolher(b));
+    row.appendChild(b);
+  });
+});
+
+function escolher(b){
+  const nome = b.dataset.nota;
+  const i = sel.findIndex(x=>x.nome===nome);
+  if(i>=0){ sel.splice(i,1); }
+  else{
+    if(sel.length>=3) sel.shift();
+    sel.push({nome, hz:+b.dataset.hz, lista:b.dataset.lista, el:b});
+    tocar(+b.dataset.hz, 0.7);
+  }
+  render();
+}
+
+function render(){
+  document.querySelectorAll(".chip").forEach(c=>{
+    const on = sel.some(x=>x.nome===c.dataset.nota);
+    c.classList.toggle("on", on);
+    c.classList.remove("ring");
+    c.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  svg.innerHTML = "";
+  statusEl.classList.remove("hit");
+  document.body.classList.remove("lock-do","lock-re");
+
+  if(sel.length===0){
+    statusMain.textContent = "Escolhe três notas";
+    statusSub.textContent = "Nenhuma nota selecionada";
+    return;
+  }
+  statusSub.textContent = sel.map(x=>x.nome+" "+x.hz+" Hz").join("   ·   ");
+
+  if(sel.length<3){
+    statusMain.textContent = "Faltam " + (3-sel.length) + (sel.length===2?" nota":" notas");
+    return;
+  }
+
+  const listas = new Set(sel.map(x=>x.lista));
+  const classes = new Set(sel.map(x=>classeDe(x.nome)));
+  const lista = sel[0].lista;
+  const ok = listas.size===1 && classes.size===3;
+
+  if(ok){
+    const nome = lista==="A" ? "Dó Maior" : "Ré menor";
+    statusMain.textContent = "Sintonia · " + nome;
+    statusEl.classList.add("hit");
+    document.body.classList.add(lista==="A" ? "lock-do" : "lock-re");
+    sel.forEach(x=>x.el.classList.add("ring"));
+    sel.slice().sort((a,b)=>a.hz-b.hz).forEach((x,i)=>tocar(x.hz, 1.9, i*0.04, 0.17));
+    desenharLigacoes();
+  } else {
+    statusMain.textContent = listas.size>1 ? "Acordes misturados" : "Nota repetida na tríade";
+    bench.classList.remove("bad"); void bench.offsetWidth; bench.classList.add("bad");
+    sel.forEach((x,i)=>tocar(x.hz, 0.5, i*0.01, 0.14));
+  }
+}
+
+function desenharLigacoes(){
+  const box = bench.getBoundingClientRect();
+  svg.setAttribute("viewBox", "0 0 " + box.width + " " + box.height);
+  const pts = sel.map(x=>{
+    const r = x.el.getBoundingClientRect();
+    return [r.left - box.left + r.width/2, r.top - box.top + r.height/2];
+  });
+  let d = "";
+  for(let i=0;i<pts.length;i++){
+    for(let j=i+1;j<pts.length;j++){
+      d += "M"+pts[i][0]+","+pts[i][1]+" L"+pts[j][0]+","+pts[j][1]+" ";
+    }
+  }
+  svg.innerHTML = '<path d="'+d+'" stroke="#17171A" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+}
+window.addEventListener("resize", ()=>{ if(svg.innerHTML) desenharLigacoes(); });
+
+/* ---------- rssi ---------- */
+const dist = document.getElementById("dist");
+const nodeB = document.getElementById("nodeB");
+const link = document.getElementById("link");
+const distOut = document.getElementById("distOut");
+const rssiOut = document.getElementById("rssiOut");
+const verdict = document.getElementById("verdict");
+const LIMIAR = -55;
+
+function rssiUpdate(){
+  const m = dist.value / 10;
+  const dbm = Math.round(-35 - 22 * Math.log10(m + 0.55) - 4);
+  const stage = document.querySelector(".rssi-stage").getBoundingClientRect();
+  const left = 60 + (dist.value/100) * Math.max(120, stage.width - 140);
+  nodeB.style.left = left + "px";
+  link.style.left = "60px";
+  link.style.width = Math.max(0, left - 60) + "px";
+  const ok = dbm >= LIMIAR;
+  link.classList.toggle("ok", ok);
+  distOut.textContent = m.toFixed(1).replace(".", ",") + " m";
+  rssiOut.textContent = "−" + Math.abs(dbm) + " dBm";
+  verdict.textContent = ok ? "Nota aceite" : "Nota ignorada";
+  verdict.className = "verdict " + (ok ? "yes" : "no");
+}
+dist.addEventListener("input", rssiUpdate);
+window.addEventListener("resize", rssiUpdate);
+rssiUpdate();
+
+/* ---------- copiar ---------- */
+document.getElementById("copyBtn").addEventListener("click", async e=>{
+  const txt = document.getElementById("code").innerText;
+  try{
+    await navigator.clipboard.writeText(txt);
+    e.target.textContent = "Copiado";
+  }catch(err){
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    e.target.textContent = "Copiado";
+  }
+  setTimeout(()=>{ e.target.textContent = "Copiar código"; }, 1800);
+});
+</script>
+</body>
+</html>
